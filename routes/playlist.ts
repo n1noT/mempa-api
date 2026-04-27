@@ -18,12 +18,14 @@ router.post('/', async (req, res) => {
   res.status(201).json(playlist);
 });
 
-// Récupération simple
+
+
 router.get('/:id', async (req, res) => {
   const id = parseInt(req.params.id as string, 10);
-  const playlist = await prisma.playlist.findUnique({ 
+  const playlist = await prisma.playlist.update({ 
     where: { id },
-    include: { tracks: { orderBy: { addedAt: 'asc' } } } // Liste triée
+    data: { clicks: { increment: 1 } },
+    include: { tracks: { orderBy: { addedAt: 'asc' } } }
   });
   res.json(playlist);
 });
