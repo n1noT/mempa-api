@@ -1,13 +1,10 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
-
 datasource db {
   provider = "postgresql"
 }
@@ -17,4 +14,32 @@ model User {
   email     String   @unique
   name      String?
   createdAt DateTime @default(now())
+}
+
+model Playlist {
+  id           Int      @id @default(autoincrement())
+  name         String
+  creator      String
+  clicks       Int      @default(0) //0 par defaut
+  style        String
+
+  contributors String[] //liste des noms de contributeurs en String
+  
+  tracks       Track[]  //  Une playlist contient plusieurs morceaux et la liste est triee
+  
+  createdAt    DateTime @default(now())
+}
+
+
+model Track {
+  id         Int      @id @default(autoincrement())
+  title      String
+  artist     String
+  
+  playlistId Int // cle etrangere
+ 
+  playlist   Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade) 
+  //cascade pour supprimer les morceaux en meme temps
+  
+  addedAt    DateTime @default(now())// pour trier par heures
 }
