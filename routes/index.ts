@@ -1,13 +1,8 @@
-const express = require('express');
-const router = express.Router();
+import { Router, Request, Response } from "express";
+const router = Router();
 
-/* GET home page. */
-router.get('/', function(req, res, next) {
-  res.send('Mempa API');
-});
-
-router.head('/healthcheck', function(req, res, next) {
+router.head("/healthcheck", function (req: Request, res: Response, next: Function) {
   res.status(200).end();
 });
 
-module.exports = router;
+export default router;

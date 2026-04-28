@@ -1,15 +1,15 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
-    "module": "CommonJS",
-    "lib": ["ES2022"],
-    "outDir": "./dist",
-    "rootDir": "./",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "target": "ES2023",
     "strict": true,
     "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "types": ["node", "jest"],
+    "outDir": "./dist",
+    "rootDir": "./",
+    "skipLibCheck": true
   },
-  "include": ["**/*.ts", "jest.config.js"],
+  "include": ["**/*.ts", "jest.config.cjs"],
   "exclude": ["node_modules"]
 }
