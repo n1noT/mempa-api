@@ -3,7 +3,6 @@ import prisma from '../prisma/client';
 
 const router = Router();
 
-// Création d'une playlist (Attributs obligatoires)
 router.post('/', async (req, res) => {
   const { name, creator, style, contributors } = req.body;
   const playlist = await prisma.playlist.create({
@@ -12,7 +11,7 @@ router.post('/', async (req, res) => {
       creator, 
       style, 
       contributors,
-      clicks: 0 // Initialisé à 0 par défaut
+      clicks: 0 
     }
   });
   res.status(201).json(playlist);

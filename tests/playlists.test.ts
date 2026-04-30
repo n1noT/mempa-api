@@ -2,7 +2,7 @@ import request from 'supertest';
 import app from '../app';
 
 describe('SCRUM-10: Création de Playlist', () => {
-  let playlistId: number; // <-- On crée une variable pour mémoriser l'ID
+  let playlistId: number; 
 
   it('doit créer une playlist avec tous les attributs', async () => {
     const res = await request(app).post('/playlist').send({
@@ -14,7 +14,7 @@ describe('SCRUM-10: Création de Playlist', () => {
     expect(res.statusCode).toBe(201);
     expect(res.body.clicks).toBe(0);
     
-    playlistId = res.body.id; // <-- On sauvegarde le véritable ID créé (ex: 4, 5...)
+    playlistId = res.body.id; 
   });
 
   it('doit incrémenter les clics à chaque consultation', async () => {
