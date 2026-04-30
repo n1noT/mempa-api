@@ -5,7 +5,7 @@ import prisma from "../prisma/client";
 const router = Router();
 
 router.post("/register", async (req: Request, res: Response) => {
-  try { // <-- LE TRY MANQUANT EST ICI
+  try { 
     const { email, username, password } = req.body;
 
     if (!email || !username || !password) {
