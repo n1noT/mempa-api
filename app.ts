@@ -37,5 +37,6 @@ app.use(
 app.use("/", indexRouter);
 app.use("/auth", authRouter);
 app.use("/playlist", playlistRouter);
+app.use("/playlists", playlistRouter);
 
 export default app;
