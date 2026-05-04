@@ -1,5 +1,5 @@
-import { Router } from "express";
-import prisma from "../prisma/client";
+import { Router, Request, Response } from 'express';
+import prisma from '../prisma/client';
 
 const router = Router();
 
@@ -9,54 +9,59 @@ type trackToAdd = {
   order: number;
 };
 
-// Création d'une playlist (Attributs obligatoires)
-router.post("/", async (req, res) => {
-  const { name, styleId, trackIds, creator } = req.body;
+// Création d'une playlist (Attributs obligatoires - Compatible SCRUM-61/63)
+router.post("/", async (req: Request, res: Response) => {
+  try {
+    const { name, styleId, trackIds, creator } = req.body;
 
-  if (!name || !styleId || !creator) {
-    return res
-      .status(400)
-      .json({ message: "name, styleId et creator sont requis" });
-  }
-
-  let trackIdsToAdd: trackToAdd[] = [];
-  if (Array.isArray(trackIds) && trackIds.length > 0) {
-    // On élimine les doublons éviter des erreurs quand on ajoute les mêmes pistes plusieurs fois
-    const uniqueTrackIds = Array.from(new Set(trackIds));
-    const tracks = await prisma.track.findMany({
-      where: { id: { in: uniqueTrackIds }, styleId },
-    });
-
-    if (tracks.length !== uniqueTrackIds.length) {
+    if (!name || !styleId || !creator) {
       return res
         .status(400)
-        .json({ message: "Certaines pistes sont invalides ou hors style" });
+        .json({ message: "name, styleId et creator sont requis" });
     }
 
-    trackIdsToAdd = trackIds.map((id: number, index: number) => ({
-      trackId: id,
-      order: index,
-    }));
-  }
+    let trackIdsToAdd: trackToAdd[] = [];
+    if (Array.isArray(trackIds) && trackIds.length > 0) {
+      const uniqueTrackIds = Array.from(new Set(trackIds));
+      const tracks = await prisma.track.findMany({
+        where: { id: { in: uniqueTrackIds }, styleId },
+      });
 
-  const playlist = await prisma.playlist.create({
-    data: {
-      name,
-      creator,
-      styleId,
-      tracks: {
-        create: trackIdsToAdd,
+      if (tracks.length !== uniqueTrackIds.length) {
+        return res
+          .status(400)
+          .json({ message: "Certaines pistes sont invalides ou hors style" });
+      }
+
+      trackIdsToAdd = trackIds.map((id: number, index: number) => ({
+        trackId: id,
+        order: index,
+      }));
+    }
+
+    const playlist = await prisma.playlist.create({
+      data: {
+        name,
+        creator,
+        styleId,
+        clicks: 0,
+        tracks: {
+          create: trackIdsToAdd,
+        },
       },
-    },
-    include: {
-      style: true,
-      tracks: { include: { track: true }, orderBy: { order: "asc" } },
-    },
-  });
-  res.status(201).json(playlist);
+      include: {
+        style: true,
+        tracks: { include: { track: true }, orderBy: { order: "asc" } },
+      },
+    });
+    res.status(201).json(playlist);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
-router.get("/", async (req, res) => {
+// Liste des playlists avec recherche et tri pour SCRUM-11 page d'accueil
+router.get("/", async (req: Request, res: Response) => {
   const searchTerm =
     typeof req.query.searchTerm === "string" ? req.query.searchTerm.trim() : "";
   const sortBy =
@@ -120,18 +125,33 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.get("/:id", async (req, res) => {
-  const id = parseInt(req.params.id as string, 10);
-  const playlist = await prisma.playlist.update({
-    where: { id },
-    data: { clicks: { increment: 1 } },
-    include: {
-      style: true,
-      tracks: { include: { track: true }, orderBy: { order: "asc" } },
-    },
-  });
-  if (!playlist) return res.status(404).json({ message: "Playlist inconnue" });
-  res.json(playlist);
+// SCRUM-13 : Récupération et incrémentation des clics
+router.get("/:id", async (req: Request, res: Response) => {
+  try {
+    const id = parseInt(req.params.id as string, 10);
+    const playlist = await prisma.playlist.update({
+      where: { id },
+      data: { clicks: { increment: 1 } },
+      include: {
+        style: true,
+        tracks: { include: { track: true }, orderBy: { order: "asc" } },
+      },
+    });
+    if (!playlist) return res.status(404).json({ message: "Playlist inconnue" });
+    res.json(playlist);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// SCRUM-15 : Bloquage des modifications 
+router.put('/:id', (req: Request, res: Response) => {
+  res.status(405).json({ message: "Méthode non autorisée : Les playlists sont en lecture seule." });
+});
+
+// SCRUM-15 : Bloquage des suppressions 
+router.delete('/:id', (req: Request, res: Response) => {
+  res.status(405).json({ message: "Méthode non autorisée : Les playlists ne peuvent pas être supprimées." });
 });
 
 export default router;
