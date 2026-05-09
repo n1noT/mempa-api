@@ -1,0 +1,22 @@
+meta {
+  name: update-style
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{url}}/styles/1
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "name": "Rap"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

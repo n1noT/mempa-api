@@ -7,6 +7,8 @@ import cors from "cors";
 import indexRouter from "./routes/index";
 import authRouter from "./routes/auth";
 import playlistRouter from "./routes/playlist";
+import tracksRouter from "./routes/tracks";
+import stylesRouter from "./routes/styles";
 
 declare module "express-session" {
   interface SessionData {
@@ -54,6 +56,8 @@ app.use(
 
 app.use("/", indexRouter);
 app.use("/auth", authRouter);
+app.use("/tracks", tracksRouter);
+app.use("/styles", stylesRouter);
 app.use("/playlist", playlistRouter);
 app.use("/playlists", playlistRouter);
 
