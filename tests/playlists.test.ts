@@ -25,4 +25,17 @@ describe('SCRUM-10: Création de Playlist', () => {
     const res2 = await request(app).get(`/playlist/${playlistId}`);
     expect(res2.body.clicks).toBe(2);
   });
+
+  it('doit ajouter les pistes à la playlist', async () => {
+    const trackRes = await request(app).get('/tracks/style/1');
+    const trackIds = trackRes.body.slice(0, 3).map((track: any) => track.id); // On prend les 3 premières pistes du style 1
+    const res = await request(app).post('/playlist').send({
+      name: "Playlist avec Pistes",
+      creator: "Testeur",
+      styleId: 1,
+      trackIds: trackIds
+    });
+    expect(res.statusCode).toBe(201);
+    expect(res.body.tracks.length).toBe(trackIds.length);
+  });
 });
