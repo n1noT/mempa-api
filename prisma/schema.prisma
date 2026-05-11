@@ -29,27 +29,32 @@ model Playlist {
   name         String
   creator      String
   clicks       Int      @default(0) //0 par defaut
-  styleId      Int      
+  styleId      Int
   style        MusicStyle @relation(fields: [styleId], references: [id], onDelete: Cascade)
 
   contributors String[] //liste des noms de contributeurs en String
-  
-  tracks       Track[]  //  Une playlist contient plusieurs morceaux et la liste est triee
-  
+  tracks       PlaylistTrack[]
   createdAt    DateTime @default(now())
 }
-
 
 model Track {
   id         Int      @id @default(autoincrement())
   title      String
   artist     String
   styleId    Int
-  style      MusicStyle @relation(fields: [styleId], references: [id], onDelete: Cascade)
-
-  playlistId Int? // cle etrangere
-  playlist   Playlist? @relation(fields: [playlistId], references: [id], onDelete: Cascade) 
-  //cascade pour supprimer les morceaux en meme temps
-  
+  style     MusicStyle @relation(fields: [styleId], references: [id], onDelete: Cascade)
+  playlists PlaylistTrack[]
   addedAt    DateTime @default(now())// pour trier par heures
+}
+
+model PlaylistTrack {
+  id         Int      @id @default(autoincrement())
+  playlistId Int
+  trackId    Int
+  order      Int
+
+  playlist   Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  track      Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@index([playlistId, order])
 }

@@ -1,0 +1,29 @@
+meta {
+  name: create-playlist
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{url}}/playlist
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "name": "Playlist de Bruno",
+    "creator": "Bruno",
+    "styleId": 1,
+    "trackIds": [
+      1,
+      2,
+      3
+    ]
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

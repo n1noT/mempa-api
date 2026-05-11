@@ -4,17 +4,53 @@ import prisma from "../prisma/client";
 const router = Router();
 
 type PlaylistSortBy = "name" | "popularity" | "recent";
+type trackToAdd = {
+  trackId: number;
+  order: number;
+};
 
 // Création d'une playlist (Attributs obligatoires)
 router.post("/", async (req, res) => {
-  const { name, creator, styleId, contributors } = req.body;
+  const { name, styleId, trackIds, creator } = req.body;
+
+  if (!name || !styleId || !creator) {
+    return res
+      .status(400)
+      .json({ message: "name, styleId et creator sont requis" });
+  }
+
+  let trackIdsToAdd: trackToAdd[] = [];
+  if (Array.isArray(trackIds) && trackIds.length > 0) {
+    // On élimine les doublons éviter des erreurs quand on ajoute les mêmes pistes plusieurs fois
+    const uniqueTrackIds = Array.from(new Set(trackIds));
+    const tracks = await prisma.track.findMany({
+      where: { id: { in: uniqueTrackIds }, styleId },
+    });
+
+    if (tracks.length !== uniqueTrackIds.length) {
+      return res
+        .status(400)
+        .json({ message: "Certaines pistes sont invalides ou hors style" });
+    }
+
+    trackIdsToAdd = trackIds.map((id: number, index: number) => ({
+      trackId: id,
+      order: index,
+    }));
+  }
+
   const playlist = await prisma.playlist.create({
     data: {
       name,
       creator,
       styleId,
-      contributors,
-      clicks: 0, // Initialisé à 0 par défaut
+      tracks: {
+        create: trackIdsToAdd,
+      },
+    },
+    include: {
+      style: true,
+      tracks: { include: { track: true }, orderBy: { order: "asc" } },
     },
   });
   res.status(201).json(playlist);
@@ -38,7 +74,11 @@ router.get("/", async (req, res) => {
               OR: [
                 { name: { contains: searchTerm, mode: "insensitive" } },
                 { creator: { contains: searchTerm, mode: "insensitive" } },
-                { style: { name: { contains: searchTerm, mode: "insensitive" } } },
+                {
+                  style: {
+                    name: { contains: searchTerm, mode: "insensitive" },
+                  },
+                },
               ],
             }
           : undefined,
@@ -85,8 +125,12 @@ router.get("/:id", async (req, res) => {
   const playlist = await prisma.playlist.update({
     where: { id },
     data: { clicks: { increment: 1 } },
-    include: { tracks: { orderBy: { addedAt: "asc" } } },
+    include: {
+      style: true,
+      tracks: { include: { track: true }, orderBy: { order: "asc" } },
+    },
   });
+  if (!playlist) return res.status(404).json({ message: "Playlist inconnue" });
   res.json(playlist);
 });
 
