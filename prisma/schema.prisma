@@ -17,12 +17,20 @@ model User {
   createdAt DateTime @default(now())
 }
 
+model MusicStyle {
+  id        Int        @id @default(autoincrement())
+  name      String
+  playlists Playlist[]
+  tracks    Track[]
+}
+
 model Playlist {
   id           Int      @id @default(autoincrement())
   name         String
   creator      String
   clicks       Int      @default(0) //0 par defaut
-  style        String
+  styleId      Int      
+  style        MusicStyle @relation(fields: [styleId], references: [id], onDelete: Cascade)
 
   contributors String[] //liste des noms de contributeurs en String
   
@@ -36,10 +44,11 @@ model Track {
   id         Int      @id @default(autoincrement())
   title      String
   artist     String
-  
-  playlistId Int // cle etrangere
- 
-  playlist   Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade) 
+  styleId    Int
+  style      MusicStyle @relation(fields: [styleId], references: [id], onDelete: Cascade)
+
+  playlistId Int? // cle etrangere
+  playlist   Playlist? @relation(fields: [playlistId], references: [id], onDelete: Cascade) 
   //cascade pour supprimer les morceaux en meme temps
   
   addedAt    DateTime @default(now())// pour trier par heures

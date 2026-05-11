@@ -1,0 +1,16 @@
+meta {
+  name: delete-track
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{url}}/tracks/1
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

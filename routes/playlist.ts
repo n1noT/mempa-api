@@ -7,12 +7,12 @@ type PlaylistSortBy = "name" | "popularity" | "recent";
 
 // Création d'une playlist (Attributs obligatoires)
 router.post("/", async (req, res) => {
-  const { name, creator, style, contributors } = req.body;
+  const { name, creator, styleId, contributors } = req.body;
   const playlist = await prisma.playlist.create({
     data: {
       name,
       creator,
-      style,
+      styleId,
       contributors,
       clicks: 0, // Initialisé à 0 par défaut
     },
@@ -38,7 +38,7 @@ router.get("/", async (req, res) => {
               OR: [
                 { name: { contains: searchTerm, mode: "insensitive" } },
                 { creator: { contains: searchTerm, mode: "insensitive" } },
-                { style: { contains: searchTerm, mode: "insensitive" } },
+                { style: { name: { contains: searchTerm, mode: "insensitive" } } },
               ],
             }
           : undefined,
@@ -52,7 +52,12 @@ router.get("/", async (req, res) => {
         id: true,
         name: true,
         creator: true,
-        style: true,
+        style: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
         clicks: true,
         createdAt: true,
         _count: { select: { tracks: true } },

@@ -8,7 +8,7 @@ describe('SCRUM-10: Création de Playlist', () => {
     const res = await request(app).post('/playlist').send({
       name: "Ma Super Liste",
       creator: "Antoine",
-      style: "Rock",
+      styleId: 1,
       contributors: ["Alice", "Bob"]
     });
     expect(res.statusCode).toBe(201);
