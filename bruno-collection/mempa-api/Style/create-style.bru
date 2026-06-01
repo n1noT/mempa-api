@@ -1,0 +1,22 @@
+meta {
+  name: create-style
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{url}}/styles
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "name": "Jazz"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

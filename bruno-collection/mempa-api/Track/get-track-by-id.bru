@@ -1,11 +1,11 @@
 meta {
-  name: healthcheck
+  name: get-track-by-id
   type: http
-  seq: 1
+  seq: 3
 }
 
-head {
-  url: {{url}}/healthcheck
+get {
+  url: {{url}}/tracks/1
   body: none
   auth: inherit
 }
