@@ -242,12 +242,13 @@ const makeTracks = (
   curator: string,
   trackCount: number,
   publishedAt: string,
+  styleId: number,
 ) => {
   const baseDate = new Date(publishedAt);
   return Array.from({ length: trackCount }, (_, index) => ({
     title: `${title} Track ${index + 1}`,
     artist: curator,
-    playlistId,
+    styleId,
     addedAt: new Date(baseDate.getTime() + index * 60_000),
   }));
 };
@@ -257,6 +258,16 @@ export const seedPlaylists = async (prisma: PrismaClient) => {
   let createdTracks = 0;
 
   for (const playlist of SEED_PLAYLISTS) {
+    // Ensure MusicStyle exists for this playlist genre
+    let styleRecord = await prisma.musicStyle.findFirst({
+      where: { name: playlist.genre },
+    });
+    if (!styleRecord) {
+      styleRecord = await prisma.musicStyle.create({
+        data: { name: playlist.genre },
+      });
+    }
+
     const existing = await prisma.playlist.findFirst({
       where: {
         name: playlist.title,
@@ -270,7 +281,7 @@ export const seedPlaylists = async (prisma: PrismaClient) => {
           data: {
             name: playlist.title,
             creator: playlist.curator,
-            style: playlist.genre,
+            styleId: styleRecord.id,
             clicks: playlist.likes,
             contributors: [playlist.curator],
             createdAt: new Date(playlist.publishedAt),
@@ -281,20 +292,42 @@ export const seedPlaylists = async (prisma: PrismaClient) => {
       createdPlaylists += 1;
     }
 
-    const trackCount = await prisma.track.count({
+    // Count existing PlaylistTrack links for this playlist to decide if we should add tracks
+    const trackCount = await prisma.playlistTrack.count({
       where: { playlistId: playlistRecord.id },
     });
 
     if (trackCount === 0 && playlist.trackCount > 0) {
-      const tracks = makeTracks(
+      const tracksData = makeTracks(
+        /* playlistId not included in Track model anymore */
+        /* will create tracks, then link with PlaylistTrack */
         playlistRecord.id,
         playlist.title,
         playlist.curator,
         playlist.trackCount,
         playlist.publishedAt,
+        styleRecord.id,
       );
-      const result = await prisma.track.createMany({ data: tracks });
-      createdTracks += result.count;
+
+      // Create tracks one-by-one to obtain their IDs, then link them to the playlist
+      const createdIds: number[] = [];
+      for (const td of tracksData) {
+        const t = await prisma.track.create({ data: td });
+        createdIds.push(t.id);
+      }
+
+      // Create PlaylistTrack links preserving order
+      for (let i = 0; i < createdIds.length; i++) {
+        await prisma.playlistTrack.create({
+          data: {
+            playlistId: playlistRecord.id,
+            trackId: createdIds[i],
+            order: i + 1,
+          },
+        });
+      }
+
+      createdTracks += createdIds.length;
     }
   }
 
