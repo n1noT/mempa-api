@@ -1,5 +1,6 @@
 import { Router } from "express";
 import prisma from "../prisma/client";
+import { requireAuth } from "../middlewares/requireAuth";
 
 const router = Router();
 
@@ -10,8 +11,9 @@ type trackToAdd = {
 };
 
 // Création d'une playlist (Attributs obligatoires)
-router.post("/", async (req, res) => {
-  const { name, styleId, trackIds, creator } = req.body;
+router.post("/", requireAuth, async (req, res) => {
+  const { name, styleId, trackIds } = req.body;
+  const creator = req.session?.user?.username;
 
   if (!name || !styleId || !creator) {
     return res

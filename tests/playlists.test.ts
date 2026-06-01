@@ -1,17 +1,37 @@
 import request from "supertest";
 import app from "../app";
+import prisma from "../prisma/client";
 
 describe("SCRUM-10: Création de Playlist", () => {
   let playlistId: number;
   let playlistWithTracksId: number;
   let trackFixtures: Array<{ id: number; title: string; artist: string }> = [];
 
+  const agent = request.agent(app); // Utilisation d'un agent pour maintenir la session
+
+  beforeAll(async () => {
+    // On crée un utilisateur de test en base de données via register
+    // La route renvoie un cookie de session que notre agent va conserver pour les requêtes suivantes
+    await agent.post("/auth/register").send({
+      email: "test_playlist@example.com",
+      username: "TestCreator",
+      password: "Password123!",
+    });
+  });
+
+  afterAll(async () => {
+    // Nettoyage de la base de données
+    await prisma.user.deleteMany({
+      where: { email: "test_playlist@example.com" },
+    });
+    await prisma.$disconnect();
+  });
+
   it("doit créer une playlist avec tous les attributs", async () => {
-    const res = await request(app)
+    const res = await agent
       .post("/playlist")
       .send({
         name: "Ma Super Liste",
-        creator: "Antoine",
         styleId: 1,
         contributors: ["Alice", "Bob"],
       });
@@ -34,9 +54,8 @@ describe("SCRUM-10: Création de Playlist", () => {
     const trackRes = await request(app).get("/tracks/style/1");
     trackFixtures = trackRes.body.slice(0, 3);
     const trackIds = trackFixtures.map((track: any) => track.id); // On prend les 3 premières pistes du style 1
-    const res = await request(app).post("/playlist").send({
+    const res = await agent.post("/playlist").send({
       name: "Playlist avec Pistes",
-      creator: "Testeur",
       styleId: 1,
       trackIds: trackIds,
     });
