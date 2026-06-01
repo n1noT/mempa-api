@@ -1,10 +1,21 @@
 import request from "supertest";
 import app from "../app";
+import prisma from "../prisma/client";
 
 describe("Gestion des Playlists : Création, Clics et Blocage", () => {
   let playlistId: number;
   let playlistWithTracksId: number;
+  let testStyleId: number;
   let trackFixtures: Array<{ id: number; title: string; artist: string }> = [];
+
+  beforeAll(async () => {
+    const style = await prisma.musicStyle.create({ data: { name: "Style Playlist Test" } });
+    testStyleId = style.id;
+  });
+
+  afterAll(async () => {
+    await prisma.musicStyle.deleteMany({ where: { name: "Style Playlist Test" } });
+  });
 
   it("doit créer une playlist avec tous les attributs", async () => {
     const res = await request(app)
@@ -12,7 +23,7 @@ describe("Gestion des Playlists : Création, Clics et Blocage", () => {
       .send({
         name: "Ma Super Liste",
         creator: "Antoine",
-        styleId: 1,
+        styleId: testStyleId,
         contributors: ["Alice", "Bob"],
       });
     expect(res.statusCode).toBe(201);
@@ -30,13 +41,13 @@ describe("Gestion des Playlists : Création, Clics et Blocage", () => {
   });
 
   it("doit ajouter les pistes à la playlist", async () => {
-    const trackRes = await request(app).get("/tracks/style/1");
-    trackFixtures = trackRes.body.slice(0, 3);
+    const trackRes = await request(app).get(`/tracks/style/${testStyleId}`);
+    trackFixtures = Array.isArray(trackRes.body) ? trackRes.body.slice(0, 3) : [];
     const trackIds = trackFixtures.map((track: any) => track.id);
     const res = await request(app).post("/playlist").send({
       name: "Playlist avec Pistes",
       creator: "Testeur",
-      styleId: 1,
+      styleId: testStyleId,
       trackIds: trackIds,
     });
     expect(res.statusCode).toBe(201);
