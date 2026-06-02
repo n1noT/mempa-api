@@ -4,7 +4,8 @@ import { requireAuth } from "../middlewares/requireAuth";
 
 const router = Router();
 
-type PlaylistSortBy = "name" | "popularity" | "recent";
+type PlaylistSortBy = "name" | "popularity" | "recent" | "style";
+type SortOrder = "asc" | "desc";
 type trackToAdd = {
   trackId: number;
   order: number;
@@ -64,11 +65,26 @@ router.get("/", async (req, res) => {
   const sortBy =
     req.query.sortBy === "name" ||
     req.query.sortBy === "popularity" ||
-    req.query.sortBy === "recent"
+    req.query.sortBy === "recent" ||
+    req.query.sortBy === "style"
       ? (req.query.sortBy as PlaylistSortBy)
       : "name";
 
-  const sortOrder = req.query.sortOrder === "desc" ? "desc" : "asc";
+  const sortOrder: SortOrder =
+    req.query.sortOrder === "desc" ? "desc" : "asc";
+
+  const orderBy = (() => {
+    switch (sortBy) {
+      case "popularity":
+        return { clicks: sortOrder };
+      case "recent":
+        return { createdAt: sortOrder };
+      case "style":
+        return { style: { name: sortOrder } };
+      default:
+        return { name: sortOrder };
+    }
+  })();
 
   try {
     const playlists = await prisma.playlist.findMany({
@@ -86,12 +102,7 @@ router.get("/", async (req, res) => {
               ],
             }
           : undefined,
-      orderBy:
-        sortBy === "popularity"
-          ? { clicks: sortOrder }
-          : sortBy === "recent"
-            ? { createdAt: sortOrder }
-            : { name: sortOrder },
+      orderBy: orderBy,
       select: {
         id: true,
         name: true,
