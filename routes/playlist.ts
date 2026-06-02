@@ -68,6 +68,8 @@ router.get("/", async (req, res) => {
       ? (req.query.sortBy as PlaylistSortBy)
       : "name";
 
+  const sortOrder = req.query.sortOrder === "desc" ? "desc" : "asc";
+
   try {
     const playlists = await prisma.playlist.findMany({
       where:
@@ -86,10 +88,10 @@ router.get("/", async (req, res) => {
           : undefined,
       orderBy:
         sortBy === "popularity"
-          ? { clicks: "desc" }
+          ? { clicks: sortOrder }
           : sortBy === "recent"
-            ? { createdAt: "desc" }
-            : { name: "asc" },
+            ? { createdAt: sortOrder }
+            : { name: sortOrder },
       select: {
         id: true,
         name: true,
