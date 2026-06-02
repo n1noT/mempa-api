@@ -28,13 +28,11 @@ describe("SCRUM-10: Création de Playlist", () => {
   });
 
   it("doit créer une playlist avec tous les attributs", async () => {
-    const res = await agent
-      .post("/playlist")
-      .send({
-        name: "Ma Super Liste",
-        styleId: 1,
-        contributors: ["Alice", "Bob"],
-      });
+    const res = await agent.post("/playlist").send({
+      name: "Ma Super Liste",
+      styleId: 1,
+      contributors: ["Alice", "Bob"],
+    });
     expect(res.statusCode).toBe(201);
     expect(res.body.clicks).toBe(0);
 
@@ -73,5 +71,45 @@ describe("SCRUM-10: Création de Playlist", () => {
     expect(Array.isArray(res.body.tracks)).toBeTruthy();
     expect(res.body.tracks[0].track.title).toBe(trackFixtures[0].title);
     expect(res.body.tracks[0].track.artist).toBe(trackFixtures[0].artist);
+  });
+
+  describe("Tri des playlists", () => {
+    it.each([
+      [
+        "par défaut (nom asc)",
+        "",
+        (p: any) => p.name,
+        (a: string, b: string) => a.localeCompare(b),
+      ],
+      [
+        "par nom (desc)",
+        "?sortBy=name&sortOrder=desc",
+        (p: any) => p.name,
+        (a: string, b: string) => b.localeCompare(a),
+      ],
+      [
+        "par popularité (desc)",
+        "?sortBy=popularity&sortOrder=desc",
+        (p: any) => p.clicks,
+        (a: number, b: number) => b - a,
+      ],
+      [
+        "par date (desc)",
+        "?sortBy=recent&sortOrder=desc",
+        (p: any) => new Date(p.createdAt).getTime(),
+        (a: number, b: number) => b - a,
+      ],
+      [
+        "par style (asc)",
+        "?sortBy=style&sortOrder=asc",
+        (p: any) => p.style.name,
+        (a: string, b: string) => a.localeCompare(b),
+      ],
+    ])("doit trier %s", async (_, query, mapFn, sortFn) => {
+      const res = await request(app).get(`/playlist${query}`);
+      expect(res.statusCode).toBe(200);
+      const values = res.body.map(mapFn);
+      expect(values).toEqual([...values].sort(sortFn));
+    });
   });
 });
