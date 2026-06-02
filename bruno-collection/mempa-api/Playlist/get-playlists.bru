@@ -5,9 +5,14 @@ meta {
 }
 
 get {
-  url: {{url}}/playlists
+  url: {{url}}/playlists?sortBy=popularity&sortOrder=asc
   body: none
   auth: inherit
+}
+
+params:query {
+  sortBy: popularity
+  sortOrder: asc
 }
 
 settings {
