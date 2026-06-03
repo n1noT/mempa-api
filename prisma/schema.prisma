@@ -25,14 +25,14 @@ enum UserRole {
 
 model MusicStyle {
   id        Int        @id @default(autoincrement())
-  name      String
+  name      String     @db.Citext // Case insensitive to enhance sorting
   playlists Playlist[]
   tracks    Track[]
 }
 
 model Playlist {
   id           Int      @id @default(autoincrement())
-  name         String
+  name         String   @db.Citext
   creator      String
   clicks       Int      @default(0) //0 par defaut
   styleId      Int

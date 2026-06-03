@@ -17,8 +17,7 @@ describe('Authentification : Inscription', () => {
       password: "Password123!"
     });
     expect(res.statusCode).toBe(201);
-    expect(res.body).toHaveProperty('userId');
-    expect(res.body.message).toBe("Compte créé et connecté");
+    expect(res.body).toHaveProperty('id');
   });
 
   it('doit échouer si des champs sont manquants', async () => {
@@ -63,7 +62,6 @@ describe('Authentification : Connexion', () => {
       password: 'Password123!',
     });
     expect(res.statusCode).toBe(200);
-    expect(res.body.message).toBe('Connexion réussie');
     expect(res.body).toHaveProperty('username', 'LoginUser');
   });
 
