@@ -14,7 +14,13 @@ model User {
   email     String   @unique
   username      String?
   password  String
+  role      UserRole @default(USER)
   createdAt DateTime @default(now())
+}
+
+enum UserRole {
+  USER
+  ADMIN
 }
 
 model MusicStyle {
@@ -41,6 +47,11 @@ model Track {
   id         Int      @id @default(autoincrement())
   title      String
   artist     String
+  album      String?
+  genre      String?
+  durationSeconds Int?
+  coverUrl   String?
+  audioUrl   String?
   styleId    Int
   style     MusicStyle @relation(fields: [styleId], references: [id], onDelete: Cascade)
   playlists PlaylistTrack[]

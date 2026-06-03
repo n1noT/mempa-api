@@ -13,8 +13,9 @@ import stylesRouter from "./routes/styles";
 declare module "express-session" {
   interface SessionData {
     user: {
-      userId: number;
+      id: number;
       username: string | null;
+      role: "ADMIN" | "USER";
     };
   }
 }
@@ -29,6 +30,7 @@ app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
+app.use("/uploads", express.static("public/uploads"));
 
 app.use(
   session({
