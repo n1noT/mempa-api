@@ -191,3 +191,90 @@ describe("SCRUM-10: Création de Playlist", () => {
   });
 });
 });
+
+describe("SCRUM-21: Suppression de Playlist (DELETE /:id)", () => {
+  const agentCreator = request.agent(app);
+  const agentOther = request.agent(app);
+  const agentAdmin = request.agent(app);
+
+  beforeAll(async () => {
+    await agentCreator.post("/auth/register").send({
+      email: "creator_delete@example.com",
+      username: "CreatorDelete",
+      password: "Password123!",
+    });
+
+    await agentOther.post("/auth/register").send({
+      email: "other_delete@example.com",
+      username: "OtherDelete",
+      password: "Password123!",
+    });
+
+    await agentAdmin.post("/auth/register").send({
+      email: "admin_delete@example.com",
+      username: "AdminDelete",
+      password: "Password123!",
+    });
+    await prisma.user.update({
+      where: { email: "admin_delete@example.com" },
+      data: { role: "ADMIN" },
+    });
+    // Re-login so the session carries the updated ADMIN role
+    await agentAdmin.post("/auth/logout");
+    await agentAdmin.post("/auth/login").send({
+      email: "admin_delete@example.com",
+      password: "Password123!",
+    });
+  });
+
+  afterAll(async () => {
+    await prisma.user.deleteMany({
+      where: {
+        email: { in: ["creator_delete@example.com", "other_delete@example.com", "admin_delete@example.com"] },
+      },
+    });
+  });
+
+  it("doit interdire la suppression si l'utilisateur n'est pas connecté (401)", async () => {
+    const createRes = await agentCreator.post("/playlist").send({ name: "Playlist protégée", styleId: 1 });
+    const id = createRes.body.id;
+
+    const res = await request(app).delete(`/playlist/${id}`);
+    expect(res.statusCode).toBe(401);
+  });
+
+  it("doit interdire la suppression par un utilisateur non-créateur (403)", async () => {
+    const createRes = await agentCreator.post("/playlist").send({ name: "Playlist du créateur", styleId: 1 });
+    const id = createRes.body.id;
+
+    const res = await agentOther.delete(`/playlist/${id}`);
+    expect(res.statusCode).toBe(403);
+  });
+
+  it("doit retourner 404 si la playlist n'existe pas", async () => {
+    const res = await agentCreator.delete("/playlist/999999");
+    expect(res.statusCode).toBe(404);
+  });
+
+  it("doit permettre au créateur de supprimer sa propre playlist (204)", async () => {
+    const createRes = await agentCreator.post("/playlist").send({ name: "Playlist à supprimer par créateur", styleId: 1 });
+    const id = createRes.body.id;
+
+    const res = await agentCreator.delete(`/playlist/${id}`);
+    expect(res.statusCode).toBe(204);
+
+    const deleted = await prisma.playlist.findUnique({ where: { id } });
+    expect(deleted).toBeNull();
+  });
+
+  it("doit permettre à un Admin de supprimer la playlist d'un autre utilisateur (204)", async () => {
+    const createRes = await agentCreator.post("/playlist").send({ name: "Playlist à supprimer par admin", styleId: 1 });
+    const id = createRes.body.id;
+
+    const res = await agentAdmin.delete(`/playlist/${id}`);
+    expect(res.statusCode).toBe(204);
+
+    const deleted = await prisma.playlist.findUnique({ where: { id } });
+    expect(deleted).toBeNull();
+  });
+});
