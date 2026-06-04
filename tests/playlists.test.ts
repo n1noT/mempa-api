@@ -51,14 +51,14 @@ describe("SCRUM-10: Création de Playlist", () => {
   it("doit ajouter les pistes à la playlist", async () => {
     const trackRes = await request(app).get("/tracks/style/1");
     trackFixtures = trackRes.body.slice(0, 3);
-    const trackIds = trackFixtures.map((track: any) => track.id); // On prend les 3 premières pistes du style 1
+    const tracksIds = trackFixtures.map((track: any) => track.id); // On prend les 3 premières pistes du style 1
     const res = await agent.post("/playlist").send({
       name: "Playlist avec Pistes",
       styleId: 1,
-      trackIds: trackIds,
+      tracksIds: tracksIds,
     });
     expect(res.statusCode).toBe(201);
-    expect(res.body.tracks.length).toBe(trackIds.length);
+    expect(res.body.tracks.length).toBe(tracksIds.length);
 
     playlistWithTracksId = res.body.id;
   });
@@ -112,4 +112,76 @@ describe("SCRUM-10: Création de Playlist", () => {
       expect(values).toEqual([...values].sort(sortFn));
     });
   });
+
+ describe("Modification de Playlist (PUT /:id)", () => {
+  const fullPayload = {
+    name: "Test Playlist Update",
+    styleId: 1,
+    tracksIds: [2, 3],
+  };
+
+  it("doit interdire la modification si l'utilisateur n'est pas connecté", async () => {
+    const res = await request(app)
+      .put(`/playlist/${playlistId}`)
+      .send(fullPayload);
+    expect(res.statusCode).toBe(401);
+  });
+
+  it("doit retourner 404 si la playlist n'existe pas", async () => {
+    const res = await agent.put("/playlist/999999").send(fullPayload);
+    expect(res.statusCode).toBe(404);
+  });
+
+  it("doit mettre à jour la playlist complète (nom, style et pistes)", async () => {
+    const res = await agent.put(`/playlist/${playlistId}`).send(fullPayload);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.name).toBe(fullPayload.name);
+    expect(res.body.styleId).toBe(fullPayload.styleId);
+    expect(res.body.tracks.length).toBe(fullPayload.tracksIds.length);
+    expect(res.body.tracks.map((t: any) => t.trackId)).toEqual(
+      expect.arrayContaining(fullPayload.tracksIds)
+    );
+  });
+
+  it("doit remplacer les pistes existantes par les nouvelles", async () => {
+    const updatedPayload = {
+      ...fullPayload,
+      tracksIds: [trackFixtures[1].id, trackFixtures[2].id],
+    };
+    const res = await agent
+      .put(`/playlist/${playlistWithTracksId}`)
+      .send(updatedPayload);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.tracks.length).toBe(updatedPayload.tracksIds.length);
+    expect(res.body.tracks[0].trackId).toBe(updatedPayload.tracksIds[0]);
+    expect(res.body.tracks[1].trackId).toBe(updatedPayload.tracksIds[1]);
+  });
+
+  it("doit échouer (400) si les pistes sont invalides ou d'un autre style", async () => {
+    const res = await agent.put(`/playlist/${playlistWithTracksId}`).send({
+      ...fullPayload,
+      tracksIds: [999999],
+    });
+    expect(res.statusCode).toBe(400);
+    expect(res.body.message).toBe(
+      "Certaines pistes sont invalides ou hors style"
+    );
+  });
+
+  it("doit échouer (400) si le styleId est invalide", async () => {
+    const res = await agent.put(`/playlist/${playlistId}`).send({
+      ...fullPayload,
+      styleId: 999999,
+    });
+    expect(res.statusCode).toBe(400);
+  });
+
+  it("doit échouer (400) si le nom est manquant (PUT = remplacement complet)", async () => {
+    const { name, ...payloadWithoutName } = fullPayload;
+    const res = await agent
+      .put(`/playlist/${playlistId}`)
+      .send(payloadWithoutName);
+    expect(res.statusCode).toBe(400);
+  });
+});
 });
