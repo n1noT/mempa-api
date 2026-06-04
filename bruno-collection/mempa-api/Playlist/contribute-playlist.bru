@@ -1,0 +1,31 @@
+meta {
+  name: contribute-playlist
+  type: http
+  seq: 5
+}
+
+patch {
+  url: {{url}}/playlist/1/contribute
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "tracksIdsAdded": [
+      {
+        "trackId": 3,
+        "order": 2
+      }
+    ],
+    "tracksIdsRemoved": [
+      4,
+      6
+    ]
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
