@@ -1,3 +1,6 @@
+# Track
+/public/uploads/tracks/*
+
 # Logs
 logs
 *.log
