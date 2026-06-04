@@ -31,7 +31,6 @@ describe("SCRUM-10: Création de Playlist", () => {
     const res = await agent.post("/playlist").send({
       name: "Ma Super Liste",
       styleId: 1,
-      contributors: ["Alice", "Bob"],
     });
     expect(res.statusCode).toBe(201);
     expect(res.body.clicks).toBe(0);
@@ -51,14 +50,14 @@ describe("SCRUM-10: Création de Playlist", () => {
   it("doit ajouter les pistes à la playlist", async () => {
     const trackRes = await request(app).get("/tracks/style/1");
     trackFixtures = trackRes.body.slice(0, 3);
-    const tracksIds = trackFixtures.map((track: any) => track.id); // On prend les 3 premières pistes du style 1
+    const tracks = trackFixtures.map((track: any, i: number) => ({ entryId: null, trackId: track.id, order: i }));
     const res = await agent.post("/playlist").send({
       name: "Playlist avec Pistes",
       styleId: 1,
-      tracksIds: tracksIds,
+      tracks,
     });
     expect(res.statusCode).toBe(201);
-    expect(res.body.tracks.length).toBe(tracksIds.length);
+    expect(res.body.tracks.length).toBe(tracks.length);
 
     playlistWithTracksId = res.body.id;
   });
@@ -79,13 +78,13 @@ describe("SCRUM-10: Création de Playlist", () => {
         "par défaut (nom asc)",
         "",
         (p: any) => p.name,
-        (a: string, b: string) => a.localeCompare(b),
+        (a: string, b: string) => a.localeCompare(b, undefined, { sensitivity: "base" }),
       ],
       [
         "par nom (desc)",
         "?sortBy=name&sortOrder=desc",
         (p: any) => p.name,
-        (a: string, b: string) => b.localeCompare(a),
+        (a: string, b: string) => b.localeCompare(a, undefined, { sensitivity: "base" }),
       ],
       [
         "par popularité (desc)",
@@ -103,7 +102,7 @@ describe("SCRUM-10: Création de Playlist", () => {
         "par style (asc)",
         "?sortBy=style&sortOrder=asc",
         (p: any) => p.style.name,
-        (a: string, b: string) => a.localeCompare(b),
+        (a: string, b: string) => a.localeCompare(b, undefined, { sensitivity: "base" }),
       ],
     ])("doit trier %s", async (_, query, mapFn, sortFn) => {
       const res = await request(app).get(`/playlist${query}`);
@@ -117,7 +116,10 @@ describe("SCRUM-10: Création de Playlist", () => {
   const fullPayload = {
     name: "Test Playlist Update",
     styleId: 1,
-    tracksIds: [2, 3],
+    tracks: [
+      { entryId: null, trackId: 2, order: 0 },
+      { entryId: null, trackId: 3, order: 1 },
+    ],
   };
 
   it("doit interdire la modification si l'utilisateur n'est pas connecté", async () => {
@@ -137,30 +139,34 @@ describe("SCRUM-10: Création de Playlist", () => {
     expect(res.statusCode).toBe(200);
     expect(res.body.name).toBe(fullPayload.name);
     expect(res.body.styleId).toBe(fullPayload.styleId);
-    expect(res.body.tracks.length).toBe(fullPayload.tracksIds.length);
+    expect(res.body.tracks.length).toBe(fullPayload.tracks.length);
     expect(res.body.tracks.map((t: any) => t.trackId)).toEqual(
-      expect.arrayContaining(fullPayload.tracksIds)
+      expect.arrayContaining(fullPayload.tracks.map((t) => t.trackId))
     );
   });
 
   it("doit remplacer les pistes existantes par les nouvelles", async () => {
     const updatedPayload = {
-      ...fullPayload,
-      tracksIds: [trackFixtures[1].id, trackFixtures[2].id],
+      name: fullPayload.name,
+      styleId: fullPayload.styleId,
+      tracks: [
+        { entryId: null, trackId: trackFixtures[1].id, order: 0 },
+        { entryId: null, trackId: trackFixtures[2].id, order: 1 },
+      ],
     };
     const res = await agent
       .put(`/playlist/${playlistWithTracksId}`)
       .send(updatedPayload);
     expect(res.statusCode).toBe(200);
-    expect(res.body.tracks.length).toBe(updatedPayload.tracksIds.length);
-    expect(res.body.tracks[0].trackId).toBe(updatedPayload.tracksIds[0]);
-    expect(res.body.tracks[1].trackId).toBe(updatedPayload.tracksIds[1]);
+    expect(res.body.tracks.length).toBe(updatedPayload.tracks.length);
+    expect(res.body.tracks[0].trackId).toBe(updatedPayload.tracks[0].trackId);
+    expect(res.body.tracks[1].trackId).toBe(updatedPayload.tracks[1].trackId);
   });
 
   it("doit échouer (400) si les pistes sont invalides ou d'un autre style", async () => {
     const res = await agent.put(`/playlist/${playlistWithTracksId}`).send({
       ...fullPayload,
-      tracksIds: [999999],
+      tracks: [{ entryId: null, trackId: 999999, order: 0 }],
     });
     expect(res.statusCode).toBe(400);
     expect(res.body.message).toBe(

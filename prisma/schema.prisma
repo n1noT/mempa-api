@@ -10,12 +10,15 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  username      String?
-  password  String
-  role      UserRole @default(USER)
-  createdAt DateTime @default(now())
+  id                   Int                   @id @default(autoincrement())
+  email                String                @unique
+  username             String?
+  password             String
+  role                 UserRole              @default(USER)
+  createdAt            DateTime              @default(now())
+  
+  createdPlaylists     Playlist[]            @relation("PlaylistCreator")
+  addedTracks          PlaylistTrack[]       @relation("TrackAdder")
 }
 
 enum UserRole {
@@ -31,31 +34,35 @@ model MusicStyle {
 }
 
 model Playlist {
-  id           Int      @id @default(autoincrement())
-  name         String   @db.Citext
-  creator      String
-  clicks       Int      @default(0) //0 par defaut
-  styleId      Int
-  style        MusicStyle @relation(fields: [styleId], references: [id], onDelete: Cascade)
+  id           Int                   @id @default(autoincrement())
+  name         String                @db.Citext
+  clicks       Int                   @default(0)
+  
+  creatorId    Int
+  creator      User                  @relation("PlaylistCreator", fields: [creatorId], references: [id], onDelete: Cascade)
 
-  contributors String[] //liste des noms de contributeurs en String
+  styleId      Int
+  style        MusicStyle            @relation(fields: [styleId], references: [id], onDelete: Cascade)
+
   tracks       PlaylistTrack[]
-  createdAt    DateTime @default(now())
+  createdAt    DateTime              @default(now())
 }
 
 model Track {
-  id         Int      @id @default(autoincrement())
-  title      String
-  artist     String
-  album      String?
-  genre      String?
+  id              Int             @id @default(autoincrement())
+  title           String
+  artist          String
+  album           String?
+  genre           String?
   durationSeconds Int?
-  coverUrl   String?
-  audioUrl   String?
-  styleId    Int
-  style     MusicStyle @relation(fields: [styleId], references: [id], onDelete: Cascade)
-  playlists PlaylistTrack[]
-  addedAt    DateTime @default(now())// pour trier par heures
+  coverUrl        String?
+  audioUrl        String?
+  
+  styleId         Int
+  style           MusicStyle      @relation(fields: [styleId], references: [id], onDelete: Cascade)
+  
+  playlists       PlaylistTrack[]
+  addedAt         DateTime        @default(now())
 }
 
 model PlaylistTrack {
@@ -63,6 +70,9 @@ model PlaylistTrack {
   playlistId Int
   trackId    Int
   order      Int
+  
+  addedById  Int
+  addedBy    User     @relation("TrackAdder", fields: [addedById], references: [id], onDelete: Cascade)
 
   playlist   Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
   track      Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)

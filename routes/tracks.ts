@@ -158,7 +158,7 @@ router.put("/:id", upload.single("audio"), async (req, res) => {
   }
   try {
     const existingTrack = await prisma.track.findUnique({
-      where: { id: Number.parseInt(id, 10) },
+      where: { id: Number.parseInt(id as string, 10) },
     });
     if (!existingTrack) {
       return res.status(404).json({ message: "Piste inconnue" });
@@ -180,7 +180,7 @@ router.put("/:id", upload.single("audio"), async (req, res) => {
       ? `/uploads/tracks/${req.file.filename}`
       : existingTrack.audioUrl;
     const updatedTrack = await prisma.track.update({
-      where: { id: Number.parseInt(id, 10) },
+      where: { id: Number.parseInt(id as string, 10) },
       data: {
         title,
         artist,
@@ -204,7 +204,7 @@ router.delete("/:id", async (req, res) => {
   const { id } = req.params;
   try {
     const existingTrack = await prisma.track.findUnique({
-      where: { id: Number.parseInt(id, 10) },
+      where: { id: Number.parseInt(id as string, 10) },
     });
     if (!existingTrack) {
       return res.status(404).json({ message: "Piste inconnue" });
@@ -220,7 +220,7 @@ router.delete("/:id", async (req, res) => {
       }
     }
     await prisma.track.delete({
-      where: { id: Number.parseInt(id, 10) },
+      where: { id: Number.parseInt(id as string, 10) },
     });
     res.status(204).send();
   } catch (error) {

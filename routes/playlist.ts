@@ -8,24 +8,34 @@ type PlaylistSortBy = "name" | "popularity" | "recent" | "style";
 type SortOrder = "asc" | "desc";
 type trackToAdd = {
   trackId: number;
+  addedById: number;
+  order: number;
+};
+
+type TrackInput = {
+  trackId: number;
   order: number;
 };
 
 // Création d'une playlist (Attributs obligatoires)
 router.post("/", requireAuth, async (req, res) => {
-  const { name, styleId, tracksIds } = req.body;
-  const creator = req.session?.user?.username;
+  const { name, styleId, tracks } = req.body;
+  const creatorId = req.session?.user?.id;
 
-  if (!name || !styleId || !creator) {
+  if (!name || !styleId || !creatorId) {
     return res
       .status(400)
       .json({ message: "name, styleId et creator sont requis" });
   }
 
   let tracksIdsToAdd: trackToAdd[] = [];
-  if (Array.isArray(tracksIds) && tracksIds.length > 0) {
+  if (Array.isArray(tracks) && tracks.length > 0) {
     try {
-      tracksIdsToAdd = await getTracksIdsToAdd(tracksIds, styleId);
+      tracksIdsToAdd = await getTracksIdsToAdd(
+        tracks.map((t: any) => ({ trackId: t.trackId, order: t.order })),
+        styleId,
+        creatorId,
+      );
     } catch (error) {
       return res.status(400).json({ message: (error as Error).message });
     }
@@ -34,13 +44,19 @@ router.post("/", requireAuth, async (req, res) => {
   const playlist = await prisma.playlist.create({
     data: {
       name,
-      creator,
+      creatorId,
       styleId,
       tracks: {
         create: tracksIdsToAdd,
       },
     },
     include: {
+      creator: {
+        select: {
+          id: true,
+          username: true,
+        },
+      },
       style: true,
       tracks: { include: { track: true }, orderBy: { order: "asc" } },
     },
@@ -81,7 +97,11 @@ router.get("/", async (req, res) => {
           ? {
               OR: [
                 { name: { contains: searchTerm, mode: "insensitive" } },
-                { creator: { contains: searchTerm, mode: "insensitive" } },
+                {
+                  creator: {
+                    username: { contains: searchTerm, mode: "insensitive" },
+                  },
+                },
                 {
                   style: {
                     name: { contains: searchTerm, mode: "insensitive" },
@@ -94,7 +114,12 @@ router.get("/", async (req, res) => {
       select: {
         id: true,
         name: true,
-        creator: true,
+        creator: {
+          select: {
+            id: true,
+            username: true,
+          },
+        },
         style: {
           select: {
             id: true,
@@ -111,7 +136,7 @@ router.get("/", async (req, res) => {
       playlists.map((playlist) => ({
         id: playlist.id,
         name: playlist.name,
-        creator: playlist.creator,
+        creator: playlist.creator.username,
         style: playlist.style,
         clicks: playlist.clicks,
         trackCount: playlist._count.tracks,
@@ -129,8 +154,25 @@ router.get("/:id", async (req, res) => {
     where: { id },
     data: { clicks: { increment: 1 } },
     include: {
+      creator: {
+        select: {
+          id: true,
+          username: true,
+        },
+      },
       style: true,
-      tracks: { include: { track: true }, orderBy: { order: "asc" } },
+      tracks: {
+        include: {
+          addedBy: {
+            select: {
+              id: true,
+              username: true,
+            },
+          },
+          track: true,
+        },
+        orderBy: { order: "asc" },
+      },
     },
   });
   if (!playlist) return res.status(404).json({ message: "Playlist inconnue" });
@@ -139,19 +181,38 @@ router.get("/:id", async (req, res) => {
 
 router.put("/:id", requireAuth, async (req, res) => {
   const id = parseInt(req.params.id as string, 10);
-  const { name, styleId, tracksIds } = req.body;
+  const { name, styleId, tracks } = req.body;
+  const creatorId = req.session?.user?.id;
 
-  if (!name || !styleId || !Array.isArray(tracksIds)) {
-    return res.status(400).json({ message: "name, styleId et tracksIds sont requis" });
+  if (!name || !styleId || !Array.isArray(tracks)) {
+    return res
+      .status(400)
+      .json({ message: "name, styleId et tracks sont requis" });
   }
 
   const playlist = await prisma.playlist.findUnique({ where: { id } });
   if (!playlist) return res.status(404).json({ message: "Playlist inconnue" });
 
-  let tracksIdsToAdd: trackToAdd[] = [];
-  if (Array.isArray(tracksIds) && tracksIds.length > 0) {
+  if (playlist.creatorId !== creatorId) {
+    return res
+      .status(403)
+      .json({ message: "Vous n'êtes pas le créateur de cette playlist" });
+  }
+
+  const keptEntryIds = tracks
+    .filter((t: any) => t.entryId !== null)
+    .map((t: any) => t.entryId as number);
+
+  const newTracks = tracks.filter((t: any) => t.entryId === null);
+
+  let newTracksToCreate: trackToAdd[] = [];
+  if (newTracks.length > 0) {
     try {
-      tracksIdsToAdd = await getTracksIdsToAdd(tracksIds, styleId);
+      newTracksToCreate = await getTracksIdsToAdd(
+        newTracks.map((t: any) => ({ trackId: t.trackId, order: t.order })),
+        styleId,
+        creatorId,
+      );
     } catch (error) {
       return res.status(400).json({ message: (error as Error).message });
     }
@@ -160,20 +221,102 @@ router.put("/:id", requireAuth, async (req, res) => {
   const updatedPlaylist = await prisma.playlist.update({
     where: { id },
     data: {
-      name: name || playlist.name,
-      styleId: styleId || playlist.styleId,
+      name,
+      styleId,
       tracks: {
-        deleteMany: {}, // Supprime les pistes existantes
-        create: tracksIdsToAdd, // Ajoute les nouvelles pistes
+        deleteMany: { id: { notIn: keptEntryIds } },
+        update: tracks
+          .filter((t: any) => t.entryId !== null)
+          .map((t: any) => ({
+            where: { id: t.entryId as number },
+            data: { order: t.order as number },
+          })),
+        create: newTracksToCreate,
       },
     },
     include: {
+      creator: {
+        select: {
+          id: true,
+          username: true,
+        },
+      },
       style: true,
-      tracks: { include: { track: true }, orderBy: { order: "asc" } },
+      tracks: {
+        include: { addedBy: true, track: true },
+        orderBy: { order: "asc" },
+      },
     },
   });
 
   res.json(updatedPlaylist);
+});
+
+router.patch("/:id/contribute", requireAuth, async (req, res) => {
+  const id = parseInt(req.params.id as string, 10);
+  const { tracksIdsAdded, tracksIdsRemoved } = req.body;
+  const contributorId = req.session?.user?.id;
+
+  if (!Array.isArray(tracksIdsAdded) && !Array.isArray(tracksIdsRemoved)) {
+    return res
+      .status(400)
+      .json({ message: "tracksIdsAdded et tracksIdsRemoved sont requis" });
+  }
+
+  if (!contributorId) {
+    return res.status(401).json({ message: "Authentification requise" });
+  }
+
+  const playlist = await prisma.playlist.findUnique({ where: { id } });
+  if (!playlist) return res.status(404).json({ message: "Playlist inconnue" });
+
+  let tracksIdsToAdd: trackToAdd[] = [];
+  if (tracksIdsAdded.length > 0) {
+    try {
+      tracksIdsToAdd = await getTracksIdsToAdd(
+        tracksIdsAdded,
+        playlist.styleId,
+        contributorId,
+      );
+    } catch (error) {
+      return res.status(400).json({ message: (error as Error).message });
+    }
+  }
+  if (tracksIdsRemoved.length > 0) {
+    await prisma.playlistTrack.deleteMany({
+      where: {
+        playlistId: id,
+        addedById: contributorId,
+        id: { in: tracksIdsRemoved },
+      },
+    });
+  }
+
+  const updatedPlaylist = await prisma.playlist.update({
+    where: { id },
+    data: {
+      tracks: {
+        create: tracksIdsToAdd,
+      },
+    },
+    include: {
+      style: true,
+      tracks: {
+        include: { addedBy: true, track: true },
+        orderBy: { order: "asc" },
+      },
+    },
+  });
+
+  res.json(
+    updatedPlaylist.tracks.map((pt) => ({
+      id: pt.id,
+      trackId: pt.trackId,
+      title: pt.track.title,
+      artist: pt.track.artist,
+      addedBy: pt.addedBy.username,
+    })),
+  );
 });
 
 async function validateTracks(
@@ -193,17 +336,18 @@ async function validateTracks(
 }
 
 async function getTracksIdsToAdd(
-  tracksIds: number[],
+  inputs: TrackInput[],
   styleId: number,
+  addedById: number,
 ): Promise<trackToAdd[]> {
-  const validationError = await validateTracks(tracksIds, styleId);
+  const validationError = await validateTracks(
+    inputs.map((t) => t.trackId),
+    styleId,
+  );
   if (validationError) {
     throw new Error(validationError);
   }
-  return tracksIds.map((id: number, index: number) => ({
-    trackId: id,
-    order: index,
-  }));
+  return inputs.map(({ trackId, order }) => ({ trackId, addedById, order }));
 }
 
 export default router;
