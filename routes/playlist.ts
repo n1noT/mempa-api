@@ -319,7 +319,7 @@ router.patch("/:id/contribute", requireAuth, async (req, res) => {
   );
 });
 
-// SCRUM-21 : Suppression avec contrôle créateur / Admin
+
 router.delete("/:id", requireAuth, async (req, res) => {
   const id = parseInt(req.params.id as string, 10);
   const { id: userId, role } = req.session.user!;
