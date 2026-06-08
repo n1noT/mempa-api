@@ -112,7 +112,22 @@ describe("SCRUM-10: Création de Playlist", () => {
     });
   });
 
- describe("Modification de Playlist (PUT /:id)", () => {
+ describe("GET /my : playlists de l'utilisateur connecté", () => {
+    it("doit retourner 401 si l'utilisateur n'est pas connecté", async () => {
+      const res = await request(app).get("/playlist/my");
+      expect(res.statusCode).toBe(401);
+    });
+
+    it("doit retourner uniquement les playlists créées par l'utilisateur connecté", async () => {
+      const res = await agent.get("/playlist/my");
+      expect(res.statusCode).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body.length).toBeGreaterThanOrEqual(1);
+      expect(res.body.every((p: any) => p.creator === "TestCreator")).toBe(true);
+    });
+  });
+
+  describe("Modification de Playlist (PUT /:id)", () => {
   const fullPayload = {
     name: "Test Playlist Update",
     styleId: 1,
