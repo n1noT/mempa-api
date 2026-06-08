@@ -319,6 +319,22 @@ router.patch("/:id/contribute", requireAuth, async (req, res) => {
   );
 });
 
+
+router.delete("/:id", requireAuth, async (req, res) => {
+  const id = parseInt(req.params.id as string, 10);
+  const { id: userId, role } = req.session.user!;
+
+  const playlist = await prisma.playlist.findUnique({ where: { id } });
+  if (!playlist) return res.status(404).json({ message: "Playlist inconnue" });
+
+  if (playlist.creatorId !== userId && role !== "ADMIN") {
+    return res.status(403).json({ message: "Vous n'êtes pas autorisé à supprimer cette playlist" });
+  }
+
+  await prisma.playlist.delete({ where: { id } });
+  return res.status(204).send();
+});
+
 async function validateTracks(
   tracksIds: number[],
   styleId: number,
