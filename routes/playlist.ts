@@ -16,6 +16,29 @@ type TrackInput = {
   trackId: number;
   order: number;
 };
+type PlaylistOrderBy =
+  | { clicks: SortOrder }
+  | { createdAt: SortOrder }
+  | { style: { name: SortOrder } }
+  | { name: SortOrder };
+
+type SearchFilter = {
+  OR: (
+    | { name: { contains: string; mode: "insensitive" } }
+    | { creator: { username: { contains: string; mode: "insensitive" } } }
+    | { style: { name: { contains: string; mode: "insensitive" } } }
+  )[];
+};
+
+type PlaylistSummary = {
+  id: number;
+  name: string;
+  creator: string | null;
+  style: { id: number; name: string } | null;
+  clicks: number;
+  trackCount: number;
+  createdAt: string;
+};
 
 // Création d'une playlist (Attributs obligatoires)
 router.post("/", requireAuth, async (req, res) => {
@@ -64,20 +87,22 @@ router.post("/", requireAuth, async (req, res) => {
   res.status(201).json(playlist);
 });
 
-router.get("/", async (req, res) => {
+function parseListQueryParams(query: Record<string, unknown>): {
+  orderBy: PlaylistOrderBy;
+  searchFilter: SearchFilter | undefined;
+} {
   const searchTerm =
-    typeof req.query.searchTerm === "string" ? req.query.searchTerm.trim() : "";
-  const sortBy =
-    req.query.sortBy === "name" ||
-    req.query.sortBy === "popularity" ||
-    req.query.sortBy === "recent" ||
-    req.query.sortBy === "style"
-      ? (req.query.sortBy as PlaylistSortBy)
+    typeof query.searchTerm === "string" ? query.searchTerm.trim() : "";
+  const sortBy: PlaylistSortBy =
+    query.sortBy === "name" ||
+    query.sortBy === "popularity" ||
+    query.sortBy === "recent" ||
+    query.sortBy === "style"
+      ? (query.sortBy as PlaylistSortBy)
       : "name";
+  const sortOrder: SortOrder = query.sortOrder === "desc" ? "desc" : "asc";
 
-  const sortOrder: SortOrder = req.query.sortOrder === "desc" ? "desc" : "asc";
-
-  const orderBy = (() => {
+  const orderBy: PlaylistOrderBy = (() => {
     switch (sortBy) {
       case "popularity":
         return { clicks: sortOrder };
@@ -90,60 +115,66 @@ router.get("/", async (req, res) => {
     }
   })();
 
-  try {
-    const playlists = await prisma.playlist.findMany({
-      where:
-        searchTerm.length > 0
-          ? {
-              OR: [
-                { name: { contains: searchTerm, mode: "insensitive" } },
-                {
-                  creator: {
-                    username: { contains: searchTerm, mode: "insensitive" },
-                  },
-                },
-                {
-                  style: {
-                    name: { contains: searchTerm, mode: "insensitive" },
-                  },
-                },
-              ],
-            }
-          : undefined,
-      orderBy: orderBy,
-      select: {
-        id: true,
-        name: true,
-        creator: {
-          select: {
-            id: true,
-            username: true,
-          },
-        },
-        style: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        clicks: true,
-        createdAt: true,
-        _count: { select: { tracks: true } },
-      },
-    });
+  const searchFilter: SearchFilter | undefined =
+    searchTerm.length > 0
+      ? {
+          OR: [
+            { name: { contains: searchTerm, mode: "insensitive" } },
+            { creator: { username: { contains: searchTerm, mode: "insensitive" } } },
+            { style: { name: { contains: searchTerm, mode: "insensitive" } } },
+          ],
+        }
+      : undefined;
 
+  return { orderBy, searchFilter };
+}
+
+async function fetchPlaylists(
+  where: object,
+  orderBy: PlaylistOrderBy,
+): Promise<PlaylistSummary[]> {
+  const playlists = await prisma.playlist.findMany({
+    where,
+    orderBy,
+    select: {
+      id: true,
+      name: true,
+      creator: { select: { id: true, username: true } },
+      style: { select: { id: true, name: true } },
+      clicks: true,
+      createdAt: true,
+      _count: { select: { tracks: true } },
+    },
+  });
+
+  return playlists.map((playlist) => ({
+    id: playlist.id,
+    name: playlist.name,
+    creator: playlist.creator.username,
+    style: playlist.style,
+    clicks: playlist.clicks,
+    trackCount: playlist._count.tracks,
+    createdAt: playlist.createdAt.toISOString(),
+  }));
+}
+
+router.get("/", async (req, res) => {
+  const { orderBy, searchFilter } = parseListQueryParams(req.query);
+  try {
+    res.json(await fetchPlaylists(searchFilter ?? {}, orderBy));
+  } catch {
+    res.status(500).json({ message: "Failed to load playlists." });
+  }
+});
+
+router.get("/my", requireAuth, async (req, res) => {
+  const userId = req.session?.user?.id;
+  const { orderBy, searchFilter } = parseListQueryParams(req.query);
+  try {
     res.json(
-      playlists.map((playlist) => ({
-        id: playlist.id,
-        name: playlist.name,
-        creator: playlist.creator.username,
-        style: playlist.style,
-        clicks: playlist.clicks,
-        trackCount: playlist._count.tracks,
-        createdAt: playlist.createdAt.toISOString(),
-      })),
+      await fetchPlaylists({ creatorId: userId, ...searchFilter }, orderBy),
     );
-  } catch (error) {
+  } catch {
     res.status(500).json({ message: "Failed to load playlists." });
   }
 });
@@ -319,7 +350,6 @@ router.patch("/:id/contribute", requireAuth, async (req, res) => {
   );
 });
 
-
 router.delete("/:id", requireAuth, async (req, res) => {
   const id = parseInt(req.params.id as string, 10);
   const { id: userId, role } = req.session.user!;
@@ -328,7 +358,9 @@ router.delete("/:id", requireAuth, async (req, res) => {
   if (!playlist) return res.status(404).json({ message: "Playlist inconnue" });
 
   if (playlist.creatorId !== userId && role !== "ADMIN") {
-    return res.status(403).json({ message: "Vous n'êtes pas autorisé à supprimer cette playlist" });
+    return res
+      .status(403)
+      .json({ message: "Vous n'êtes pas autorisé à supprimer cette playlist" });
   }
 
   await prisma.playlist.delete({ where: { id } });

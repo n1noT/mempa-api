@@ -1,16 +1,15 @@
 meta {
-  name: get-playlist-by-id
+  name: delete-playlist
   type: http
-  seq: 2
+  seq: 7
 }
 
-get {
-  url: {{url}}/playlist/1
+delete {
+  url: {{url}}/playlists
   body: none
   auth: inherit
 }
 
 settings {
   encodeUrl: true
-  timeout: 0
 }
