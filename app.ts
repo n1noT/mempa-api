@@ -9,12 +9,14 @@ import authRouter from "./routes/auth";
 import playlistRouter from "./routes/playlist";
 import tracksRouter from "./routes/tracks";
 import stylesRouter from "./routes/styles";
+import userRouter from "./routes/user";
 
 declare module "express-session" {
   interface SessionData {
     user: {
-      userId: number;
+      id: number;
       username: string | null;
+      role: "ADMIN" | "USER";
     };
   }
 }
@@ -29,6 +31,7 @@ app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
+app.use("/uploads", express.static("public/uploads"));
 
 app.use(
   session({
@@ -49,7 +52,7 @@ app.use(
   cors({
     origin: process.env.FRONTEND_URL,
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
@@ -60,5 +63,6 @@ app.use("/tracks", tracksRouter);
 app.use("/styles", stylesRouter);
 app.use("/playlist", playlistRouter);
 app.use("/playlists", playlistRouter);
+app.use("/api/users", userRouter);
 
 export default app;

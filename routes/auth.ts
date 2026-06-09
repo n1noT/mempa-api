@@ -26,17 +26,16 @@ router.post("/register", async (req: Request, res: Response) => {
     });
 
     req.session.user = {
-      userId: user.id,
+      id: user.id,
       username: user.username,
+      role: user.role,
     };
 
-    return res
-      .status(201)
-      .json({
-        message: "Compte créé et connecté",
-        userId: user.id,
-        username: user.username,
-      });
+    return res.status(201).json({
+      id: user.id,
+      username: user.username,
+      role: user.role,
+    });
   } catch (error: any) {
     console.log("ERREUR AUTHENTIFICATION :", error);
     return res.status(500).json({ error: error.message });
@@ -61,13 +60,16 @@ router.post("/login", async (req: Request, res: Response) => {
   }
 
   req.session.user = {
-    userId: user.id,
+    id: user.id,
     username: user.username,
+    role: user.role,
   };
 
-  return res
-    .status(200)
-    .json({ message: "Connexion réussie", username: user.username });
+  return res.status(200).json({
+    id: user.id,
+    username: user.username,
+    role: user.role,
+  });
 });
 
 router.post("/logout", async (req: Request, res: Response) => {
@@ -81,9 +83,9 @@ router.post("/logout", async (req: Request, res: Response) => {
 
 router.get("/me", async (req: Request, res: Response) => {
   if (req.session.user) {
-    return res.status(200).json({ loggedIn: true, user: req.session.user });
+    return res.status(200).json(req.session.user);
   }
-  return res.status(401).json({ loggedIn: false, message: "Non authentifié" });
+  return res.status(401).json({ message: "Non authentifié" });
 });
 
 export default router;

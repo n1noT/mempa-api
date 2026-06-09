@@ -31,7 +31,6 @@ describe("SCRUM-10: Création de Playlist", () => {
     const res = await agent.post("/playlist").send({
       name: "Ma Super Liste",
       styleId: 1,
-      contributors: ["Alice", "Bob"],
     });
     expect(res.statusCode).toBe(201);
     expect(res.body.clicks).toBe(0);
@@ -51,14 +50,14 @@ describe("SCRUM-10: Création de Playlist", () => {
   it("doit ajouter les pistes à la playlist", async () => {
     const trackRes = await request(app).get("/tracks/style/1");
     trackFixtures = trackRes.body.slice(0, 3);
-    const trackIds = trackFixtures.map((track: any) => track.id); // On prend les 3 premières pistes du style 1
+    const tracks = trackFixtures.map((track: any, i: number) => ({ entryId: null, trackId: track.id, order: i }));
     const res = await agent.post("/playlist").send({
       name: "Playlist avec Pistes",
       styleId: 1,
-      trackIds: trackIds,
+      tracks,
     });
     expect(res.statusCode).toBe(201);
-    expect(res.body.tracks.length).toBe(trackIds.length);
+    expect(res.body.tracks.length).toBe(tracks.length);
 
     playlistWithTracksId = res.body.id;
   });
@@ -79,13 +78,13 @@ describe("SCRUM-10: Création de Playlist", () => {
         "par défaut (nom asc)",
         "",
         (p: any) => p.name,
-        (a: string, b: string) => a.localeCompare(b),
+        (a: string, b: string) => a.localeCompare(b, undefined, { sensitivity: "base" }),
       ],
       [
         "par nom (desc)",
         "?sortBy=name&sortOrder=desc",
         (p: any) => p.name,
-        (a: string, b: string) => b.localeCompare(a),
+        (a: string, b: string) => b.localeCompare(a, undefined, { sensitivity: "base" }),
       ],
       [
         "par popularité (desc)",
@@ -103,7 +102,7 @@ describe("SCRUM-10: Création de Playlist", () => {
         "par style (asc)",
         "?sortBy=style&sortOrder=asc",
         (p: any) => p.style.name,
-        (a: string, b: string) => a.localeCompare(b),
+        (a: string, b: string) => a.localeCompare(b, undefined, { sensitivity: "base" }),
       ],
     ])("doit trier %s", async (_, query, mapFn, sortFn) => {
       const res = await request(app).get(`/playlist${query}`);
@@ -111,5 +110,171 @@ describe("SCRUM-10: Création de Playlist", () => {
       const values = res.body.map(mapFn);
       expect(values).toEqual([...values].sort(sortFn));
     });
+  });
+
+ describe("Modification de Playlist (PUT /:id)", () => {
+  const fullPayload = {
+    name: "Test Playlist Update",
+    styleId: 1,
+    tracks: [
+      { entryId: null, trackId: 2, order: 0 },
+      { entryId: null, trackId: 3, order: 1 },
+    ],
+  };
+
+  it("doit interdire la modification si l'utilisateur n'est pas connecté", async () => {
+    const res = await request(app)
+      .put(`/playlist/${playlistId}`)
+      .send(fullPayload);
+    expect(res.statusCode).toBe(401);
+  });
+
+  it("doit retourner 404 si la playlist n'existe pas", async () => {
+    const res = await agent.put("/playlist/999999").send(fullPayload);
+    expect(res.statusCode).toBe(404);
+  });
+
+  it("doit mettre à jour la playlist complète (nom, style et pistes)", async () => {
+    const res = await agent.put(`/playlist/${playlistId}`).send(fullPayload);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.name).toBe(fullPayload.name);
+    expect(res.body.styleId).toBe(fullPayload.styleId);
+    expect(res.body.tracks.length).toBe(fullPayload.tracks.length);
+    expect(res.body.tracks.map((t: any) => t.trackId)).toEqual(
+      expect.arrayContaining(fullPayload.tracks.map((t) => t.trackId))
+    );
+  });
+
+  it("doit remplacer les pistes existantes par les nouvelles", async () => {
+    const updatedPayload = {
+      name: fullPayload.name,
+      styleId: fullPayload.styleId,
+      tracks: [
+        { entryId: null, trackId: trackFixtures[1].id, order: 0 },
+        { entryId: null, trackId: trackFixtures[2].id, order: 1 },
+      ],
+    };
+    const res = await agent
+      .put(`/playlist/${playlistWithTracksId}`)
+      .send(updatedPayload);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.tracks.length).toBe(updatedPayload.tracks.length);
+    expect(res.body.tracks[0].trackId).toBe(updatedPayload.tracks[0].trackId);
+    expect(res.body.tracks[1].trackId).toBe(updatedPayload.tracks[1].trackId);
+  });
+
+  it("doit échouer (400) si les pistes sont invalides ou d'un autre style", async () => {
+    const res = await agent.put(`/playlist/${playlistWithTracksId}`).send({
+      ...fullPayload,
+      tracks: [{ entryId: null, trackId: 999999, order: 0 }],
+    });
+    expect(res.statusCode).toBe(400);
+    expect(res.body.message).toBe(
+      "Certaines pistes sont invalides ou hors style"
+    );
+  });
+
+  it("doit échouer (400) si le styleId est invalide", async () => {
+    const res = await agent.put(`/playlist/${playlistId}`).send({
+      ...fullPayload,
+      styleId: 999999,
+    });
+    expect(res.statusCode).toBe(400);
+  });
+
+  it("doit échouer (400) si le nom est manquant (PUT = remplacement complet)", async () => {
+    const { name, ...payloadWithoutName } = fullPayload;
+    const res = await agent
+      .put(`/playlist/${playlistId}`)
+      .send(payloadWithoutName);
+    expect(res.statusCode).toBe(400);
+  });
+});
+});
+
+describe("SCRUM-21: Suppression de Playlist (DELETE /:id)", () => {
+  const agentCreator = request.agent(app);
+  const agentOther = request.agent(app);
+  const agentAdmin = request.agent(app);
+
+  beforeAll(async () => {
+    await agentCreator.post("/auth/register").send({
+      email: "creator_delete@example.com",
+      username: "CreatorDelete",
+      password: "Password123!",
+    });
+
+    await agentOther.post("/auth/register").send({
+      email: "other_delete@example.com",
+      username: "OtherDelete",
+      password: "Password123!",
+    });
+
+    await agentAdmin.post("/auth/register").send({
+      email: "admin_delete@example.com",
+      username: "AdminDelete",
+      password: "Password123!",
+    });
+    await prisma.user.update({
+      where: { email: "admin_delete@example.com" },
+      data: { role: "ADMIN" },
+    });
+    // Re-login so the session carries the updated ADMIN role
+    await agentAdmin.post("/auth/logout");
+    await agentAdmin.post("/auth/login").send({
+      email: "admin_delete@example.com",
+      password: "Password123!",
+    });
+  });
+
+  afterAll(async () => {
+    await prisma.user.deleteMany({
+      where: {
+        email: { in: ["creator_delete@example.com", "other_delete@example.com", "admin_delete@example.com"] },
+      },
+    });
+  });
+
+  it("doit interdire la suppression si l'utilisateur n'est pas connecté (401)", async () => {
+    const createRes = await agentCreator.post("/playlist").send({ name: "Playlist protégée", styleId: 1 });
+    const id = createRes.body.id;
+
+    const res = await request(app).delete(`/playlist/${id}`);
+    expect(res.statusCode).toBe(401);
+  });
+
+  it("doit interdire la suppression par un utilisateur non-créateur (403)", async () => {
+    const createRes = await agentCreator.post("/playlist").send({ name: "Playlist du créateur", styleId: 1 });
+    const id = createRes.body.id;
+
+    const res = await agentOther.delete(`/playlist/${id}`);
+    expect(res.statusCode).toBe(403);
+  });
+
+  it("doit retourner 404 si la playlist n'existe pas", async () => {
+    const res = await agentCreator.delete("/playlist/999999");
+    expect(res.statusCode).toBe(404);
+  });
+
+  it("doit permettre au créateur de supprimer sa propre playlist (204)", async () => {
+    const createRes = await agentCreator.post("/playlist").send({ name: "Playlist à supprimer par créateur", styleId: 1 });
+    const id = createRes.body.id;
+
+    const res = await agentCreator.delete(`/playlist/${id}`);
+    expect(res.statusCode).toBe(204);
+
+    const deleted = await prisma.playlist.findUnique({ where: { id } });
+    expect(deleted).toBeNull();
+  });
+
+  it("doit permettre à un Admin de supprimer la playlist d'un autre utilisateur (204)", async () => {
+    const createRes = await agentCreator.post("/playlist").send({ name: "Playlist à supprimer par admin", styleId: 1 });
+    const id = createRes.body.id;
+
+    const res = await agentAdmin.delete(`/playlist/${id}`);
+    expect(res.statusCode).toBe(204);
+
+    const deleted = await prisma.playlist.findUnique({ where: { id } });
+    expect(deleted).toBeNull();
   });
 });

@@ -1,34 +1,29 @@
 meta {
-  name: create-playlist
+  name: edit-playlist
   type: http
-  seq: 2
+  seq: 3
 }
 
-post {
-  url: {{url}}/playlist
+put {
+  url: {{url}}/playlist/1
   body: json
   auth: inherit
 }
 
 body:json {
   {
-    "name": "Playlist de Bruno",
+    "name": "Bruno",
     "styleId": 1,
     "tracks": [
       {
-        "entryId": null,
+        "entryId": 1,
         "trackId": 1,
         "order": 0
       },
       {
         "entryId": null,
-        "trackId": 2,
-        "order": 1
-      },
-      {
-        "entryId": null,
         "trackId": 3,
-        "order": 2
+        "order": 1
       }
     ]
   }

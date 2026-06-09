@@ -1,0 +1,15 @@
+meta {
+  name: get-playlist-by-id
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{url}}/playlist/1
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+}
