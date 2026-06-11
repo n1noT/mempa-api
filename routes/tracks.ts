@@ -98,13 +98,30 @@ router.get("/", async (req, res) => {
 
 router.get("/style/:styleId", async (req, res) => {
   const { styleId } = req.params;
-  const tracks = await prisma.track.findMany({
-    where: {
-      styleId: Number.parseInt(styleId, 10),
-    },
-    include: { style: true },
-  });
-  res.json(tracks);
+  const searchTerm =
+    typeof req.query.search === "string" ? req.query.search.trim() : "";
+
+  try {
+    const tracks = await prisma.track.findMany({
+      where: {
+        styleId: Number.parseInt(styleId, 10),
+        ...(searchTerm.length > 0
+          ? {
+              OR: [
+                { title: { contains: searchTerm, mode: "insensitive" } },
+                { artist: { contains: searchTerm, mode: "insensitive" } },
+              ],
+            }
+          : {}),
+      },
+      include: { style: true },
+      take: 10,
+    });
+    res.json(tracks);
+  } catch (error) {
+    console.error("Failed to load tracks by style", error);
+    res.status(500).json({ message: "Impossible de charger les pistes." });
+  }
 });
 
 router.get("/:id", async (req, res) => {
