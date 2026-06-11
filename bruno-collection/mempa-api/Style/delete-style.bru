@@ -14,3 +14,11 @@ settings {
   encodeUrl: true
   timeout: 0
 }
+
+docs {
+  Delete a music style by ID. Cascades to all playlists and tracks associated with this style.
+
+  Returns 204 on success. Returns 404 if the style does not exist.
+
+  **Admin only.** Requires ADMIN role.
+}

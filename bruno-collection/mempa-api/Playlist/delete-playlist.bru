@@ -13,3 +13,10 @@ delete {
 settings {
   encodeUrl: true
 }
+
+docs {
+  Delete a playlist by ID. Allowed for the playlist creator or an ADMIN.
+
+  Returns 204 on success. Returns 403 if the caller has insufficient permissions.
+  Requires an active session.
+}

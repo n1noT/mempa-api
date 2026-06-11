@@ -33,3 +33,12 @@ settings {
   encodeUrl: true
   timeout: 0
 }
+
+docs {
+  Replace a playlist's metadata and track list. Only the creator can edit.
+
+  Tracks with a non-null `entryId` are kept (with updated `order`); those with `entryId: null` are created.
+  Tracks absent from the payload are deleted.
+
+  Requires an active session. Returns 403 if the caller is not the creator.
+}

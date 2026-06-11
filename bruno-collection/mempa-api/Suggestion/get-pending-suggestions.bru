@@ -1,0 +1,21 @@
+meta {
+  name: get-pending-suggestions
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{url}}/suggestions/pending
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+docs {
+  Return all track suggestions with status `PENDING`, ordered by creation date (most recent first).
+  Each suggestion includes the associated style and the submitter's username.
+}

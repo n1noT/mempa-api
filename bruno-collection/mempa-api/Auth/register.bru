@@ -22,3 +22,9 @@ settings {
   encodeUrl: true
   timeout: 0
 }
+
+docs {
+  Create a new user account. Password is hashed with bcrypt. A session is started immediately on success.
+
+  Returns 409 if the email is already taken.
+}

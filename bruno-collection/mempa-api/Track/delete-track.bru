@@ -14,3 +14,11 @@ settings {
   encodeUrl: true
   timeout: 0
 }
+
+docs {
+  Delete a track by ID. If the track has an associated audio file on disk, it is deleted as well.
+
+  Returns 204 on success. Returns 404 if the track does not exist.
+
+  **Admin only.** Requires ADMIN role.
+}

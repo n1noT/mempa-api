@@ -1,0 +1,36 @@
+meta {
+  name: submit-suggestion
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{url}}/suggestions
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "title": "Bohemian Rhapsody",
+    "artist": "Queen",
+    "styleId": 1,
+    "link": "https://www.youtube.com/watch?v=fJ9rUzIMcZQ",
+    "comment": "Classic rock masterpiece"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+docs {
+  Submit a track suggestion for admin review.
+
+  **Required fields:** `title`, `artist`, `styleId`
+  **Optional fields:** `link`, `comment`
+
+  Returns 201 on success. Returns 401 if no active session.
+  Requires an active session.
+}

@@ -1,0 +1,33 @@
+meta {
+  name: get-tracks
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{url}}/tracks?sortBy=recent&order=desc
+  body: none
+  auth: inherit
+}
+
+params:query {
+  sortBy: recent
+  order: desc
+  ~styleId: 1
+  ~search:
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+docs {
+  Return all tracks with optional filtering and sorting.
+
+  **Query params**
+  - `sortBy`: `recent` | `title` | `artist` (default: `recent`)
+  - `order`: `asc` | `desc` (default: `desc`)
+  - `styleId`: filter by music style ID
+  - `search`: free-text search across title, artist, album, genre
+}

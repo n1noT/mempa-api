@@ -1,0 +1,24 @@
+meta {
+  name: reject-suggestion
+  type: http
+  seq: 4
+}
+
+delete {
+  url: {{url}}/suggestions/1/reject
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+docs {
+  Reject a pending suggestion. Updates the suggestion status to `REJECTED`.
+
+  Returns 200 on success.
+
+  **Admin only.** Requires ADMIN role.
+}

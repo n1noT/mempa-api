@@ -1,0 +1,30 @@
+meta {
+  name: update-user-role
+  type: http
+  seq: 2
+}
+
+patch {
+  url: {{url}}/api/users/1/role
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "role": "ADMIN"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+docs {
+  Update the role of a user. Accepted values: `USER`, `ADMIN`.
+
+  **Required fields:** `role`
+
+  **Admin only.** Requires ADMIN role.
+}

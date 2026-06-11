@@ -30,7 +30,7 @@ enum UserRole {
 
 model MusicStyle {
   id        Int        @id @default(autoincrement())
-  name      String     @db.Citext // Case insensitive to enhance sorting
+  name      String     @db.Citext // Case insensitive pour le tri et la recherche
   playlists Playlist[]
   tracks    Track[]
   suggestions TrackSuggestion[]
@@ -68,6 +68,9 @@ model Track {
   addedAt         DateTime        @default(now())
 }
 
+// Relation many-to-many entre Playlist et Track 
+// avec un champ supplémentaire "order" pour gérer l'ordre des pistes dans la playlist,
+// et "addedBy" pour savoir qui a ajouté la piste (contributeur ou createur).
 model PlaylistTrack {
   id         Int      @id @default(autoincrement())
   playlistId Int

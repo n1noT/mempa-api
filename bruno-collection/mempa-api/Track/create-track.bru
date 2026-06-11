@@ -22,3 +22,13 @@ settings {
   encodeUrl: true
   timeout: 0
 }
+
+docs {
+  Create a new track. Accepts `multipart/form-data` to optionally upload an audio file (max 20 MB, `audio/*`).
+  The uploaded file is stored under `public/uploads/tracks/` and its URL saved in `audioUrl`.
+
+  **Required fields:** `title`, `artist`, `styleId`
+  **Optional fields:** `album`, `genre`, `durationSeconds`, `coverUrl`
+
+  **Admin only.** Requires ADMIN role.
+}

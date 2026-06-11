@@ -19,3 +19,10 @@ settings {
   encodeUrl: true
   timeout: 0
 }
+
+docs {
+  Return playlists created by the currently authenticated user.
+  Supports the same `sortBy`, `sortOrder`, and `searchTerm` params as `GET /playlists`.
+
+  Requires an active session (401 otherwise).
+}

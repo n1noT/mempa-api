@@ -19,3 +19,12 @@ settings {
   encodeUrl: true
   timeout: 0
 }
+
+docs {
+  Return all playlists as a summary list (no tracks).
+
+  **Query params**
+  - `sortBy`: `name` | `popularity` | `recent` | `style` (default: `name`)
+  - `sortOrder`: `asc` | `desc` (default: `asc`)
+  - `searchTerm`: free-text search across name, creator username, and style
+}

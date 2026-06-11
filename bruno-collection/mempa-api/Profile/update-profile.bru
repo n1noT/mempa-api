@@ -1,0 +1,35 @@
+meta {
+  name: update-profile
+  type: http
+  seq: 1
+}
+
+patch {
+  url: {{url}}/profile
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "username": "newUsername",
+    "currentPassword": "oldPassword123",
+    "newPassword": "newPassword456"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+docs {
+  Update the authenticated user's username and/or password.
+  At least one of `username` or `newPassword` must be provided.
+
+  If `newPassword` is provided, `currentPassword` is required for verification.
+
+  Returns 400 if no changes are provided or `currentPassword` is missing.
+  Returns 401 if `currentPassword` does not match.
+  Requires an active session.
+}

@@ -1,0 +1,26 @@
+meta {
+  name: validate-suggestion
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{url}}/suggestions/1/validate
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+docs {
+  Approve a pending suggestion. Creates a new track from the suggestion data and marks the suggestion as `APPROVED`.
+  Both operations are performed in a single transaction.
+
+  Returns 200 with the newly created track on success.
+  Returns 404 if the suggestion does not exist.
+
+  **Admin only.** Requires ADMIN role.
+}

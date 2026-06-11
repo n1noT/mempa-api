@@ -29,3 +29,12 @@ settings {
   encodeUrl: true
   timeout: 0
 }
+
+docs {
+  Add or remove tracks contributed by the current user on a playlist they did not create.
+
+  - `tracksIdsAdded`: array of `{ trackId, order }` to add
+  - `tracksIdsRemoved`: array of `PlaylistTrack.id` entries to remove (only entries added by the caller)
+
+  Tracks must belong to the same style as the playlist. Requires an active session.
+}

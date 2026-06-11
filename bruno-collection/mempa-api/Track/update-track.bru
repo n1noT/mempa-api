@@ -22,3 +22,14 @@ settings {
   encodeUrl: true
   timeout: 0
 }
+
+docs {
+  Update an existing track. Accepts `multipart/form-data`.
+  If a new audio file is provided, the previous file on disk is deleted automatically.
+
+  **Required fields:** `title`, `artist`, `styleId`
+  **Optional fields:** `album`, `genre`, `durationSeconds`, `coverUrl`
+  Returns 404 if the track does not exist.
+
+  **Admin only.** Requires ADMIN role.
+}

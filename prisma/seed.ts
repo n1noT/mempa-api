@@ -1,6 +1,10 @@
 import prisma from './client'
 import bcrypt from 'bcrypt'
 
+/**
+ * Script de seed avec des données de démo pour la base de données. 
+ * Il utilise la méthode `upsert` de Prisma pour éviter les doublons lors de l'exécution multiple du script.
+ */
 async function main() {
   // --- Music styles ---
   const [rock, jazz, electro] = await Promise.all([
