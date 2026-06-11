@@ -10,6 +10,7 @@ import playlistRouter from "./routes/playlist";
 import tracksRouter from "./routes/tracks";
 import stylesRouter from "./routes/styles";
 import userRouter from "./routes/user";
+import suggestionRouter from "./routes/suggestions";
 
 declare module "express-session" {
   interface SessionData {
@@ -63,6 +64,7 @@ app.use("/tracks", tracksRouter);
 app.use("/styles", stylesRouter);
 app.use("/playlist", playlistRouter);
 app.use("/playlists", playlistRouter);
-app.use("/api/users", userRouter);
+app.use("/users", userRouter);
+app.use("/suggestions", suggestionRouter);
 
 export default app;
