@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import multer from "multer";
 import prisma from "../prisma/client";
+import { requireAdmin } from "../middlewares/requireAdmin";
 
 const router = Router();
 
@@ -119,7 +120,7 @@ router.get("/:id", async (req, res) => {
   res.json(track);
 });
 
-router.post("/", upload.single("audio"), async (req, res) => {
+router.post("/", requireAdmin, upload.single("audio"), async (req, res) => {
   const { title, artist, album, genre, durationSeconds, coverUrl, styleId } =
     req.body;
   if (!title || !artist || !styleId) {
@@ -147,7 +148,7 @@ router.post("/", upload.single("audio"), async (req, res) => {
   res.status(201).json(newTrack);
 });
 
-router.put("/:id", upload.single("audio"), async (req, res) => {
+router.put("/:id", requireAdmin, upload.single("audio"), async (req, res) => {
   const { id } = req.params;
   const { title, artist, album, genre, durationSeconds, coverUrl, styleId } =
     req.body;
@@ -200,7 +201,7 @@ router.put("/:id", upload.single("audio"), async (req, res) => {
   }
 });
 
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", requireAdmin, async (req, res) => {
   const { id } = req.params;
   try {
     const existingTrack = await prisma.track.findUnique({
