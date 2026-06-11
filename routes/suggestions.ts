@@ -34,7 +34,7 @@ router.get("/pending", async (req: Request, res: Response) => {
 
 router.post("/:id/validate", async (req: Request, res: Response) => {
   try {
-    const suggestionId = parseInt(req.params.id, 10);
+    const suggestionId = parseInt(req.params.id as string, 10);
 
     const suggestion = await prisma.trackSuggestion.findUnique({
       where: { id: suggestionId },
@@ -67,7 +67,7 @@ router.post("/:id/validate", async (req: Request, res: Response) => {
 
 router.delete("/:id/reject", async (req: Request, res: Response) => {
   try {
-    const suggestionId = Number.parseInt(req.params.id, 10);
+    const suggestionId = Number.parseInt(req.params.id as string, 10);
     await prisma.trackSuggestion.update({
       where: { id: suggestionId },
       data: { status: "REJECTED" },
