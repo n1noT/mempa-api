@@ -19,6 +19,8 @@ model User {
   
   createdPlaylists     Playlist[]            @relation("PlaylistCreator")
   addedTracks          PlaylistTrack[]       @relation("TrackAdder")
+
+  suggestions TrackSuggestion[] @relation("UserSuggestions")
 }
 
 enum UserRole {
@@ -31,6 +33,7 @@ model MusicStyle {
   name      String     @db.Citext // Case insensitive to enhance sorting
   playlists Playlist[]
   tracks    Track[]
+  suggestions TrackSuggestion[]
 }
 
 model Playlist {
@@ -78,4 +81,21 @@ model PlaylistTrack {
   track      Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
 
   @@index([playlistId, order])
+}
+
+model TrackSuggestion {
+  id            Int        @id @default(autoincrement())
+  title         String
+  artist        String
+  link          String?
+  comment       String?
+  status        String     @default("PENDING") // PENDING, APPROVED, REJECTED
+  
+  styleId       Int
+  style         MusicStyle @relation(fields: [styleId], references: [id], onDelete: Cascade)
+  
+  submittedById Int
+  submittedBy   User       @relation("UserSuggestions", fields: [submittedById], references: [id], onDelete: Cascade)
+  
+  createdAt     DateTime   @default(now())
 }
