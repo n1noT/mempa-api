@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import prisma from '../prisma/client';
+import { requireAdmin } from '../middlewares/requireAdmin';
 
 const router = Router();
 
@@ -11,7 +12,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   const { id } = req.params;
   const style = await prisma.musicStyle.findUnique({
-    where: { id: parseInt(id) },
+    where: { id: parseInt(id as string, 10) },
   });
   if (!style) {
     return res.status(404).json({ message: 'Style inconnu' });
@@ -19,7 +20,7 @@ router.get('/:id', async (req, res) => {
   res.json(style);
 });
 
-router.post('/', async (req, res) => {
+router.post('/', requireAdmin, async (req, res) => {
   const { name } = req.body;
   if (!name) {
     return res.status(400).json({ message: 'Le nom du style est requis' });
@@ -30,7 +31,7 @@ router.post('/', async (req, res) => {
   res.status(201).json(newStyle);
 });
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', requireAdmin, async (req, res) => {
   const { id } = req.params;
   const { name } = req.body;
   if (!name) {
@@ -38,7 +39,7 @@ router.put('/:id', async (req, res) => {
   }
   try {
     const updatedStyle = await prisma.musicStyle.update({
-      where: { id: parseInt(id) },
+      where: { id: parseInt(id as string, 10) },
       data: { name },
     });
     res.json(updatedStyle);
@@ -47,11 +48,11 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAdmin, async (req, res) => {
   const { id } = req.params;
   try {
     await prisma.musicStyle.delete({
-      where: { id: parseInt(id) },
+      where: { id: parseInt(id as string, 10) },
     });
     res.status(204).send();
   } catch (error) {
