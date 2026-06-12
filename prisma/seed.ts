@@ -50,13 +50,13 @@ async function main() {
     }),
     prisma.track.upsert({
       where: { id: 3 },
-      update: { audioUrl: 'https://www.youtube.com/watch?v=lDwWOzRGuFY' },
-      create: { title: 'Hotel California', artist: 'Eagles', album: 'Hotel California', durationSeconds: 391, styleId: rock.id, audioUrl: 'https://www.youtube.com/watch?v=lDwWOzRGuFY' },
+      update: { audioUrl: 'https://www.youtube.com/watch?v=09839DpTctU' },
+      create: { title: 'Hotel California', artist: 'Eagles', album: 'Hotel California', durationSeconds: 391, styleId: rock.id, audioUrl: 'https://www.youtube.com/watch?v=09839DpTctU' },
     }),
     prisma.track.upsert({
       where: { id: 4 },
-      update: { audioUrl: 'https://www.youtube.com/watch?v=wr9gUr-eWdA' },
-      create: { title: 'Wake Up', artist: 'Rage Against the Machine', album: 'Rage Against the Machine', durationSeconds: 270, styleId: rock.id, audioUrl: 'https://www.youtube.com/watch?v=wr9gUr-eWdA' },
+      update: { audioUrl: 'https://www.youtube.com/watch?v=4lzqUe1Qfec' },
+      create: { title: 'Wake Up', artist: 'Rage Against the Machine', album: 'Rage Against the Machine', durationSeconds: 270, styleId: rock.id, audioUrl: 'https://www.youtube.com/watch?v=4lzqUe1Qfec' },
     }),
     prisma.track.upsert({
       where: { id: 13 },
@@ -104,18 +104,18 @@ async function main() {
     }),
     prisma.track.upsert({
       where: { id: 7 },
-      update: {},
-      create: { title: 'My Favorite Things', artist: 'John Coltrane', album: 'My Favorite Things', durationSeconds: 800, styleId: jazz.id },
+      update: { audioUrl: 'https://www.youtube.com/watch?v=JQvc-Gkwhow' },
+      create: { title: 'My Favorite Things', artist: 'John Coltrane', album: 'My Favorite Things', durationSeconds: 800, styleId: jazz.id, audioUrl: 'https://www.youtube.com/watch?v=JQvc-Gkwhow' },
     }),
     prisma.track.upsert({
       where: { id: 8 },
-      update: {},
-      create: { title: 'Sing, Sing, Sing', artist: 'Benny Goodman', album: 'Sing, Sing, Sing', durationSeconds: 520, styleId: jazz.id },
+      update: { audioUrl: 'https://www.youtube.com/watch?v=6VHt4hazMG0' },
+      create: { title: 'Sing, Sing, Sing', artist: 'Benny Goodman', album: 'Sing, Sing, Sing', durationSeconds: 520, styleId: jazz.id, audioUrl: 'https://www.youtube.com/watch?v=6VHt4hazMG0' },
     }),
     prisma.track.upsert({
       where: { id: 19 },
-      update: { audioUrl: 'https://www.youtube.com/watch?v=PNKB9tBnQog' },
-      create: { title: "All Blues", artist: 'Miles Davis', album: 'Kind of Blue', durationSeconds: 694, styleId: jazz.id, audioUrl: 'https://www.youtube.com/watch?v=PNKB9tBnQog' },
+      update: { audioUrl: 'https://www.youtube.com/watch?v=-488UORrfJ0' },
+      create: { title: "All Blues", artist: 'Miles Davis', album: 'Kind of Blue', durationSeconds: 694, styleId: jazz.id, audioUrl: 'https://www.youtube.com/watch?v=-488UORrfJ0' },
     }),
     prisma.track.upsert({
       where: { id: 20 },
@@ -124,13 +124,13 @@ async function main() {
     }),
     prisma.track.upsert({
       where: { id: 21 },
-      update: {},
-      create: { title: 'A Love Supreme', artist: 'John Coltrane', album: 'A Love Supreme', durationSeconds: 971, styleId: jazz.id },
+      update: { audioUrl: 'https://www.youtube.com/watch?v=ll3CMgiUPuU' },
+      create: { title: 'A Love Supreme', artist: 'John Coltrane', album: 'A Love Supreme', durationSeconds: 971, styleId: jazz.id, audioUrl: 'https://www.youtube.com/watch?v=ll3CMgiUPuU' },
     }),
     prisma.track.upsert({
       where: { id: 22 },
-      update: {},
-      create: { title: 'Round Midnight', artist: 'Thelonious Monk', album: 'Brilliant Corners', durationSeconds: 332, styleId: jazz.id },
+      update: { audioUrl: 'https://www.youtube.com/watch?v=IrAfjW5qiyo' },
+      create: { title: 'Round Midnight', artist: 'Thelonious Monk', album: 'Brilliant Corners', durationSeconds: 332, styleId: jazz.id, audioUrl: 'https://www.youtube.com/watch?v=IrAfjW5qiyo' },
     }),
   ])
 
@@ -138,8 +138,8 @@ async function main() {
   const tracksElectro = await Promise.all([
     prisma.track.upsert({
       where: { id: 9 },
-      update: { audioUrl: 'https://www.youtube.com/watch?v=yku_bRDHMgE' },
-      create: { title: 'Around the World', artist: 'Daft Punk', album: 'Homework', durationSeconds: 429, styleId: electro.id, audioUrl: 'https://www.youtube.com/watch?v=yku_bRDHMgE' },
+      update: { audioUrl: 'https://www.youtube.com/watch?v=K0HSD_i2DvA' },
+      create: { title: 'Around the World', artist: 'Daft Punk', album: 'Homework', durationSeconds: 429, styleId: electro.id, audioUrl: 'https://www.youtube.com/watch?v=K0HSD_i2DvA' },
     }),
     prisma.track.upsert({
       where: { id: 10 },
@@ -158,13 +158,13 @@ async function main() {
     }),
     prisma.track.upsert({
       where: { id: 23 },
-      update: { audioUrl: 'https://www.youtube.com/watch?v=GDBkILTglq0' },
-      create: { title: 'Da Funk', artist: 'Daft Punk', album: 'Homework', durationSeconds: 329, styleId: electro.id, audioUrl: 'https://www.youtube.com/watch?v=GDBkILTglq0' },
+      update: { audioUrl: 'https://www.youtube.com/watch?v=mmi60Bd4jSs' },
+      create: { title: 'Da Funk', artist: 'Daft Punk', album: 'Homework', durationSeconds: 329, styleId: electro.id, audioUrl: 'https://www.youtube.com/watch?v=mmi60Bd4jSs' },
     }),
     prisma.track.upsert({
       where: { id: 24 },
-      update: {},
-      create: { title: 'Blue (Da Ba Dee)', artist: 'Eiffel 65', album: 'Europop', durationSeconds: 235, styleId: electro.id },
+      update: { audioUrl: 'https://www.youtube.com/watch?v=68ugkg9RePc' },
+      create: { title: 'Blue (Da Ba Dee)', artist: 'Eiffel 65', album: 'Europop', durationSeconds: 235, styleId: electro.id, audioUrl: 'https://www.youtube.com/watch?v=68ugkg9RePc' },
     }),
   ])
 
