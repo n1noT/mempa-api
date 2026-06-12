@@ -28,12 +28,14 @@ router.post("/register", async (req: Request, res: Response) => {
     req.session.user = {
       id: user.id,
       username: user.username,
+      email: user.email,
       role: user.role,
     };
 
     return res.status(201).json({
       id: user.id,
       username: user.username,
+      email: user.email,
       role: user.role,
     });
   } catch (error: any) {
@@ -62,12 +64,14 @@ router.post("/login", async (req: Request, res: Response) => {
   req.session.user = {
     id: user.id,
     username: user.username,
+    email: user.email,
     role: user.role,
   };
 
   return res.status(200).json({
     id: user.id,
     username: user.username,
+    email: user.email,
     role: user.role,
   });
 });
@@ -82,10 +86,17 @@ router.post("/logout", async (req: Request, res: Response) => {
 });
 
 router.get("/me", async (req: Request, res: Response) => {
-  if (req.session.user) {
-    return res.status(200).json(req.session.user);
+  if (!req.session.user) {
+    return res.status(401).json({ message: "Non authentifié" });
   }
-  return res.status(401).json({ message: "Non authentifié" });
+  const user = await prisma.user.findUnique({
+    where: { id: req.session.user.id },
+    select: { id: true, username: true, email: true, role: true },
+  });
+  if (!user) {
+    return res.status(401).json({ message: "Non authentifié" });
+  }
+  return res.status(200).json(user);
 });
 
 export default router;

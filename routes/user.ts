@@ -1,5 +1,6 @@
 import { Router, Request, Response } from "express";
 import prisma from "../prisma/client";
+import { requireAdmin } from "../middlewares/requireAdmin";
 
 const router = Router();
 
@@ -22,9 +23,9 @@ router.get("/", async (req: Request, res: Response) => {
   }
 });
 
-router.patch("/:id/role", async (req: Request, res: Response) => {
+router.patch("/:id/role", requireAdmin, async (req: Request, res: Response) => {
   try {
-    const userId = parseInt(req.params.id, 10);
+    const userId = parseInt(req.params.id as string, 10);
     const { role } = req.body; // 'USER' ou 'ADMIN'
 
     const updatedUser = await prisma.user.update({
@@ -40,9 +41,9 @@ router.patch("/:id/role", async (req: Request, res: Response) => {
   }
 });
 
-router.delete("/:id", async (req: Request, res: Response) => {
+router.delete("/:id", requireAdmin, async (req: Request, res: Response) => {
   try {
-    const userId = parseInt(req.params.id, 10);
+    const userId = parseInt(req.params.id as string, 10);
     await prisma.user.delete({
       where: { id: userId },
     });

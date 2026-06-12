@@ -10,12 +10,15 @@ import playlistRouter from "./routes/playlist";
 import tracksRouter from "./routes/tracks";
 import stylesRouter from "./routes/styles";
 import userRouter from "./routes/user";
+import suggestionRouter from "./routes/suggestions";
+import profileRouter from "./routes/profile";
 
 declare module "express-session" {
   interface SessionData {
     user: {
       id: number;
       username: string | null;
+      email: string | null;
       role: "ADMIN" | "USER";
     };
   }
@@ -63,6 +66,8 @@ app.use("/tracks", tracksRouter);
 app.use("/styles", stylesRouter);
 app.use("/playlist", playlistRouter);
 app.use("/playlists", playlistRouter);
-app.use("/api/users", userRouter);
+app.use("/users", userRouter);
+app.use("/suggestions", suggestionRouter);
+app.use("/profile", profileRouter);
 
 export default app;
